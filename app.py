@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -6,9 +7,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sakil-secret-key-12345'
+
+# ১. ফিক্সড সিক্রেট কি (যাতে সার্ভার রিস্টার্ট হলেও সেশন না ভাঙে)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'my-permanent-fixed-secret-key-998877')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# ২. লগইন সেশনের মেয়াদ ৩০ দিন পর্যন্ত বাড়ানো হলো
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -28,6 +34,8 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
+# --- Auth Routes ---
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -39,7 +47,8 @@ def register():
             flash('এই ইউজারনেমটি ইতোমধ্যে ব্যবহৃত হয়েছে।', 'danger')
             return redirect(url_for('register'))
             
-        hashed_pw = generate_password_hash(password, method='scrypt')
+        # Standard pbkdf2:sha256 হ্যাশিং
+        hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(username=username, password=hashed_pw)
         db.session.add(new_user)
         db.session.commit()
@@ -57,7 +66,8 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password, password):
-            login_user(user)
+            # ৩. remember=True দিলে ব্রাউজার সেশন সেভ থাকবে (বারবার লগইন লাগবে না)
+            login_user(user, remember=True)
             return redirect(url_for('index'))
         else:
             flash('ভুল ইউজারনেম বা পাসওয়ার্ড!', 'danger')
@@ -69,6 +79,8 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+# --- Main App Routes ---
 
 @app.route('/')
 @login_required
