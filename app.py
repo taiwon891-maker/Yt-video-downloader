@@ -16,7 +16,6 @@ login_manager.login_view = 'login'
 
 YOUTUBE_API_KEY = "AIzaSyAj_ZB8TOSQViO5MYQAfYEnf-T9LlcuFks"
 
-# ইউজার ডাটাবেজ মডেল
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -26,11 +25,8 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# ডাটাবেজ টেবিল তৈরি
 with app.app_context():
     db.create_all()
-
-# --- Auth Routes ---
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -74,8 +70,6 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# --- App Routes ---
-
 @app.route('/')
 @login_required
 def index():
@@ -101,31 +95,6 @@ def search():
     except Exception:
         return jsonify({"videos": [], "nextPageToken": ""})
 
-@app.route('/download')
-@login_required
-def download():
-    video_url = request.args.get('url')
-    quality = request.args.get('quality', '720p')
-
-    payload = {
-        "url": video_url,
-        "videoQuality": "720" if quality == "720p" else "1080",
-        "downloadMode": "audio" if quality == "mp3" else "auto"
-    }
-
-    headers = {"Accept": "application/json", "Content-Type": "application/json"}
-
-    try:
-        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
-        res_data = response.json()
-
-        if "url" in res_data:
-            return redirect(res_data["url"])
-        else:
-            return f"Download Failed: {res_data.get('text', 'Server Error')}", 500
-    except Exception as e:
-        return f"Error: {str(e)}", 500
-
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-            
+    
