@@ -8,25 +8,34 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --primary: #ff0050; --dark: #121212; --card: #1e1e1e; }
-        body { background: var(--dark); color: white; font-family: sans-serif; padding-bottom: 80px; }
-        .header { position: sticky; top: 0; z-index: 1000; background: rgba(18, 18, 18, 0.9); backdrop-filter: blur(10px); padding: 15px; border-bottom: 1px solid #333; }
-        .search-bar { background: #222; border: 1px solid #444; color: white; border-radius: 50px; padding-left: 20px; }
+        body { background: var(--dark); color: white; font-family: sans-serif; padding-bottom: 70px; }
+        
+        /* সার্চ বার স্টিকি */
+        .header { position: sticky; top: 0; z-index: 1000; background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px); padding: 12px; border-bottom: 1px solid #333; }
+        .search-bar { background: #222; border: 1px solid #444; color: white; border-radius: 50px; padding-left: 15px; }
+
+        /* ভিডিও প্লেয়ার Home-এর উপরে ফিক্সড থাকবে */
+        .player-wrapper { position: sticky; top: 60px; z-index: 999; background: #000; border-bottom: 1px solid #333; }
+        .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; }
+        .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        
         .v-card { background: var(--card); border-radius: 12px; overflow: hidden; margin-bottom: 15px; border: 1px solid #222; cursor: pointer; }
         .v-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-        .v-title { padding: 10px; font-size: 14px; font-weight: bold; height: 55px; overflow: hidden; }
+        .v-title { padding: 10px; font-size: 13px; font-weight: bold; height: 50px; overflow: hidden; }
+        
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; z-index: 2000; }
         .nav-btn { background: none; border: none; color: #888; font-size: 11px; flex: 1; }
         .nav-btn.active { color: var(--primary); }
-        .nav-btn i { font-size: 20px; display: block; }
+        .nav-btn i { font-size: 18px; display: block; }
+        
         .section { display: none; padding-top: 10px; }
         .section.active { display: block; }
-        .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 10px; }
-        .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .download-btn { border-radius: 50px; font-weight: bold; font-size: 12px; margin: 3px; }
+        .download-btn { border-radius: 50px; font-weight: bold; font-size: 12px; margin: 2px; }
     </style>
 </head>
 <body>
 
+<!-- হেডার / সার্চ বার -->
 <div class="header d-flex align-items-center justify-content-between">
     <div class="input-group me-2">
         <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান খুঁজুন বা লিংক দিন...">
@@ -35,67 +44,98 @@
     <a href="/logout" class="btn btn-outline-light btn-sm text-nowrap"><i class="fas fa-sign-out-alt"></i></a>
 </div>
 
-<div class="container mt-2">
-    <p class="text-secondary small mb-2">Welcome, <b class="text-light">{{ username }}</b></p>
+<!-- Home সেকশন (ভিডিও প্লেয়ার উপরে এবং নিচে আনলিমিটেড ভিডিও ফিড) -->
+<div id="home-sec" class="section active">
     
-    <div id="home-sec" class="section active">
-        <div id="video-feed" class="row row-cols-1 row-cols-md-2 row-cols-lg-3"></div>
-        <div id="loader" class="text-center p-3" style="display:none;"><div class="spinner-border text-danger"></div></div>
-    </div>
-
-    <div id="playing-sec" class="section">
+    <!-- উপরে স্টিকি প্লেয়ার (স্ক্রোল করলে এটি নড়বে না) -->
+    <div class="player-wrapper">
         <div class="embed-container">
             <iframe id="playerIframe" src="" allowfullscreen></iframe>
         </div>
-        <div class="p-3 mt-2 bg-dark rounded shadow">
-            <h6 id="playTitle">ভিডিও নির্বাচন করুন</h6>
-            <div class="d-flex flex-wrap mt-3">
-                <button onclick="startDownload('720p')" class="btn btn-info download-btn"><i class="fas fa-download me-1"></i> Download MP4</button>
-                <button onclick="startDownload('mp3')" class="btn btn-warning download-btn"><i class="fas fa-music me-1"></i> Download MP3</button>
+        <div class="p-2 bg-dark shadow-sm d-flex justify-content-between align-items-center">
+            <small id="playTitle" class="text-truncate me-2" style="max-width: 60%;">ভিডিও প্লে করতে তালিকায় ক্লিক করুন</small>
+            <div>
+                <button onclick="startDownload('mp4')" class="btn btn-info btn-sm download-btn"><i class="fas fa-download"></i> MP4</button>
+                <button onclick="startDownload('mp3')" class="btn btn-warning btn-sm download-btn"><i class="fas fa-music"></i> MP3</button>
             </div>
+        </div>
+    </div>
+
+    <!-- আনলিমিটেড স্ক্রোল ভিডিও ফিড -->
+    <div class="container mt-3">
+        <div id="video-feed" class="row row-cols-1 row-cols-md-2 row-cols-lg-3"></div>
+        <div id="loader" class="text-center p-3" style="display:none;"><div class="spinner-border text-danger"></div></div>
+    </div>
+</div>
+
+<!-- ডাউনলোড সেকশন (বটমে কাস্টম পেজ) -->
+<div id="download-sec" class="section container">
+    <h5 class="mb-3 text-danger"><i class="fas fa-download me-2"></i>ডাউনলোড পেজ</h5>
+    <div class="p-3 bg-dark rounded border border-secondary text-center">
+        <p class="mb-2 fs-6">বর্তমানে নির্বাচিত ভিডিও:</p>
+        <p id="downloadSelectedTitle" class="fw-bold text-info">কোনো ভিডিও সিলেক্ট করা হয়নি</p>
+        <hr class="border-secondary">
+        <div class="d-grid gap-2 col-11 mx-auto">
+            <button onclick="startDownload('mp4')" class="btn btn-info fw-bold"><i class="fas fa-video me-1"></i> Download MP4 Video</button>
+            <button onclick="startDownload('mp3')" class="btn btn-warning fw-bold"><i class="fas fa-music me-1"></i> Download MP3 Audio</button>
         </div>
     </div>
 </div>
 
+<!-- বটম নেভিগেশন বার -->
 <div class="bottom-nav">
     <button class="nav-btn active" onclick="showSection('home', this)"><i class="fas fa-home"></i>Home</button>
-    <button class="nav-btn" onclick="showSection('playing', this)"><i class="fas fa-play"></i>Playing</button>
+    <button class="nav-btn" onclick="showSection('download', this)"><i class="fas fa-download"></i>Downloads</button>
 </div>
 
 <script>
     let nextPageToken = "";
     let currentQuery = "Bangla new songs";
     let playingUrl = "";
+    let isLoading = false;
 
+    // ১. ইউটিউব ভিডিও সার্চ ও ফিড লোড
     async function loadVideos(q, append = false) {
+        if(isLoading) return;
+        isLoading = true;
         document.getElementById('loader').style.display = "block";
-        const res = await fetch(`/search?q=${encodeURIComponent(q)}&pageToken=${nextPageToken}`);
-        const data = await res.json();
         
-        const feed = document.getElementById('video-feed');
-        if (!append) feed.innerHTML = "";
+        try {
+            const res = await fetch(`/search?q=${encodeURIComponent(q)}&pageToken=${nextPageToken}`);
+            const data = await res.json();
+            
+            const feed = document.getElementById('video-feed');
+            if (!append) feed.innerHTML = "";
+            
+            data.videos.forEach(v => {
+                const cleanTitle = v.title.replace(/'/g, "");
+                feed.innerHTML += `
+                    <div class="col">
+                        <div class="v-card" onclick="playThis('${v.url}', '${v.videoId}', '${cleanTitle}')">
+                            <img src="${v.thumbnail}">
+                            <div class="v-title">${v.title}</div>
+                        </div>
+                    </div>`;
+            });
+            nextPageToken = data.nextPageToken || "";
+        } catch(e) {}
         
-        data.videos.forEach(v => {
-            const cleanTitle = v.title.replace(/'/g, "");
-            feed.innerHTML += `
-                <div class="col">
-                    <div class="v-card" onclick="playThis('${v.url}', '${v.videoId}', '${cleanTitle}')">
-                        <img src="${v.thumbnail}">
-                        <div class="v-title">${v.title}</div>
-                    </div>
-                </div>`;
-        });
-        nextPageToken = data.nextPageToken || "";
         document.getElementById('loader').style.display = "none";
+        isLoading = false;
     }
 
+    // ২. ভিডিও প্লে করা
     function playThis(url, videoId, title) {
         playingUrl = url;
-        showSection('playing');
         document.getElementById('playTitle').innerText = title;
+        document.getElementById('downloadSelectedTitle').innerText = title;
         document.getElementById('playerIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        
+        // প্লে করার সময় স্ক্রোল একদম উপরে না নিয়ে প্লেয়ারটি দৃশ্যমান রাখা
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // ৩. সেকশন সুইচ
     function showSection(name, element) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -104,11 +144,12 @@
         if(element) element.classList.add('active');
     }
 
+    // ৪. সার্চ হ্যান্ডলার
     function handleSearch() {
         const val = document.getElementById('searchInput').value;
         if(val.includes('youtube.com') || val.includes('youtu.be')) {
             let vid = val.split('v=')[1] || val.split('/').pop();
-            playThis(val, vid, "Link Video");
+            playThis(val, vid, "Custom Link Video");
         } else {
             currentQuery = val;
             nextPageToken = "";
@@ -117,10 +158,25 @@
         }
     }
 
-    function startDownload(q) {
+    // ৫. ডাউনলোড ট্রিগার
+    function startDownload(type) {
         if(!playingUrl) return alert("প্রথমে একটি ভিডিও প্লে করুন।");
-        window.location.href = `/download?url=${encodeURIComponent(playingUrl)}&quality=${q}`;
+        let cleanUrl = encodeURIComponent(playingUrl);
+        let downloadLink = type === 'mp3' 
+            ? `https://loader.to/api/card/?url=${cleanUrl}&f=mp3`
+            : `https://loader.to/api/card/?url=${cleanUrl}&f=720`;
+            
+        window.open(downloadLink, '_blank');
     }
+
+    // ৬. আনলিমিটেড স্ক্রলিং লজিক (Scroll Down / Up)
+    window.onscroll = () => {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
+            if(document.getElementById('home-sec').classList.contains('active') && nextPageToken) {
+                loadVideos(currentQuery, true);
+            }
+        }
+    };
 
     window.onload = () => loadVideos(currentQuery);
 </script>
