@@ -23,19 +23,21 @@
         .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 10px; }
         .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         .download-btn { border-radius: 50px; font-weight: bold; font-size: 12px; margin: 3px; }
-        .list-item { background: #222; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="input-group">
-        <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান খুঁজুন বা লিঙ্ক দিন...">
+<div class="header d-flex align-items-center justify-content-between">
+    <div class="input-group me-2">
+        <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান খুঁজুন বা লিংক দিন...">
         <button class="btn btn-danger rounded-circle ms-2" onclick="handleSearch()"><i class="fas fa-search"></i></button>
     </div>
+    <a href="/logout" class="btn btn-outline-light btn-sm text-nowrap"><i class="fas fa-sign-out-alt"></i></a>
 </div>
 
 <div class="container mt-2">
+    <p class="text-secondary small mb-2">Welcome, <b class="text-light">{{ username }}</b></p>
+    
     <div id="home-sec" class="section active">
         <div id="video-feed" class="row row-cols-1 row-cols-md-2 row-cols-lg-3"></div>
         <div id="loader" class="text-center p-3" style="display:none;"><div class="spinner-border text-danger"></div></div>
@@ -53,17 +55,11 @@
             </div>
         </div>
     </div>
-
-    <div id="history-sec" class="section">
-        <h5 class="mb-3"><i class="fas fa-history me-2"></i>প্লে হিস্ট্রি</h5>
-        <div id="history-list"></div>
-    </div>
 </div>
 
 <div class="bottom-nav">
     <button class="nav-btn active" onclick="showSection('home', this)"><i class="fas fa-home"></i>Home</button>
     <button class="nav-btn" onclick="showSection('playing', this)"><i class="fas fa-play"></i>Playing</button>
-    <button class="nav-btn" onclick="showSection('history', this)"><i class="fas fa-history"></i>History</button>
 </div>
 
 <script>
@@ -98,7 +94,6 @@
         showSection('playing');
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playerIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-        addToHistory(title);
     }
 
     function showSection(name, element) {
@@ -109,16 +104,11 @@
         if(element) element.classList.add('active');
     }
 
-    function addToHistory(title) {
-        const list = document.getElementById('history-list');
-        list.innerHTML = `<div class="list-item"><i class="fas fa-check-circle text-success me-2"></i>${title}</div>` + list.innerHTML;
-    }
-
     function handleSearch() {
         const val = document.getElementById('searchInput').value;
         if(val.includes('youtube.com') || val.includes('youtu.be')) {
             let vid = val.split('v=')[1] || val.split('/').pop();
-            playThis(val, vid, "Custom Link Video");
+            playThis(val, vid, "Link Video");
         } else {
             currentQuery = val;
             nextPageToken = "";
@@ -129,7 +119,6 @@
 
     function startDownload(q) {
         if(!playingUrl) return alert("প্রথমে একটি ভিডিও প্লে করুন।");
-        alert("ডাউনলোড প্রসেস হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...");
         window.location.href = `/download?url=${encodeURIComponent(playingUrl)}&quality=${q}`;
     }
 
@@ -137,5 +126,4 @@
 </script>
 
 </body>
-    </html>
-    
+</html>
