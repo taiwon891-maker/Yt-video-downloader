@@ -20,7 +20,8 @@
         .nav-btn i { font-size: 20px; display: block; }
         .section { display: none; padding-top: 10px; }
         .section.active { display: block; }
-        video { width: 100%; border-radius: 10px; background: #000; }
+        .embed-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; background: #000; border-radius: 10px; }
+        .embed-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         .download-btn { border-radius: 50px; font-weight: bold; font-size: 12px; margin: 3px; }
         .list-item { background: #222; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
     </style>
@@ -29,7 +30,7 @@
 
 <div class="header">
     <div class="input-group">
-        <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান খুঁজুন বা ইউটিউব লিংক দিন...">
+        <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান খুঁজুন বা লিঙ্ক দিন...">
         <button class="btn btn-danger rounded-circle ms-2" onclick="handleSearch()"><i class="fas fa-search"></i></button>
     </div>
 </div>
@@ -41,13 +42,14 @@
     </div>
 
     <div id="playing-sec" class="section">
-        <video id="mainVideo" controls autoplay></video>
+        <div class="embed-container">
+            <iframe id="playerIframe" src="" allowfullscreen></iframe>
+        </div>
         <div class="p-3 mt-2 bg-dark rounded shadow">
             <h6 id="playTitle">ভিডিও নির্বাচন করুন</h6>
             <div class="d-flex flex-wrap mt-3">
-                <button onclick="startDownload('720p')" class="btn btn-info download-btn"><i class="fas fa-download"></i> 720p MP4</button>
-                <button onclick="startDownload('360p')" class="btn btn-secondary download-btn"><i class="fas fa-download"></i> 360p MP4</button>
-                <button onclick="startDownload('mp3')" class="btn btn-warning download-btn"><i class="fas fa-music"></i> MP3 Audio</button>
+                <button onclick="startDownload('720p')" class="btn btn-info download-btn"><i class="fas fa-download me-1"></i> Download MP4</button>
+                <button onclick="startDownload('mp3')" class="btn btn-warning download-btn"><i class="fas fa-music me-1"></i> Download MP3</button>
             </div>
         </div>
     </div>
@@ -81,7 +83,7 @@
             const cleanTitle = v.title.replace(/'/g, "");
             feed.innerHTML += `
                 <div class="col">
-                    <div class="v-card" onclick="playThis('${v.url}', '${cleanTitle}')">
+                    <div class="v-card" onclick="playThis('${v.url}', '${v.videoId}', '${cleanTitle}')">
                         <img src="${v.thumbnail}">
                         <div class="v-title">${v.title}</div>
                     </div>
@@ -91,23 +93,12 @@
         document.getElementById('loader').style.display = "none";
     }
 
-    async function playThis(url, title) {
+    function playThis(url, videoId, title) {
         playingUrl = url;
         showSection('playing');
-        document.getElementById('playTitle').innerText = "লোড হচ্ছে...";
-        
-        const fd = new FormData();
-        fd.append('url', url);
-        const res = await fetch('/get_info', {method: 'POST', body: fd});
-        const data = await res.json();
-        
-        if(data.video_url) {
-            document.getElementById('mainVideo').src = data.video_url;
-            document.getElementById('playTitle').innerText = data.title;
-            addToHistory(data.title);
-        } else {
-            alert("ভিডিও প্লে করতে সমস্যা হচ্ছে।");
-        }
+        document.getElementById('playTitle').innerText = title;
+        document.getElementById('playerIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        addToHistory(title);
     }
 
     function showSection(name, element) {
@@ -125,12 +116,20 @@
 
     function handleSearch() {
         const val = document.getElementById('searchInput').value;
-        if(val.includes('http')) playThis(val, "Link Video");
-        else { currentQuery = val; nextPageToken = ""; loadVideos(val); showSection('home'); }
+        if(val.includes('youtube.com') || val.includes('youtu.be')) {
+            let vid = val.split('v=')[1] || val.split('/').pop();
+            playThis(val, vid, "Custom Link Video");
+        } else {
+            currentQuery = val;
+            nextPageToken = "";
+            loadVideos(val);
+            showSection('home');
+        }
     }
 
     function startDownload(q) {
         if(!playingUrl) return alert("প্রথমে একটি ভিডিও প্লে করুন।");
+        alert("ডাউনলোড প্রসেস হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...");
         window.location.href = `/download?url=${encodeURIComponent(playingUrl)}&quality=${q}`;
     }
 
@@ -138,4 +137,5 @@
 </script>
 
 </body>
-</html>
+    </html>
+    
