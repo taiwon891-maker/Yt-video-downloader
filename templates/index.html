@@ -3,196 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Video Downloader</title>
+    <title>YouTube</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { 
-            --primary: #ff0050; 
-            --accent: #00f2fe;
-            --dark-bg: #0f0f12; 
-            --card-bg: #18181c; 
-            --card-hover: #222228;
-        }
-        
-        body { 
-            background: var(--dark-bg); 
-            color: #f1f1f1; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding-bottom: 75px; 
+        :root {
+            --yt-white: #ffffff;
+            --yt-black: #0f0f0f;
+            --yt-gray-bg: #f2f2f2;
+            --yt-border: #e5e5e5;
         }
 
-        /* স্টাইলিশ গ্লাস হেডার */
-        .header { 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            background: rgba(15, 15, 18, 0.85); 
-            backdrop-filter: blur(12px); 
-            padding: 12px 15px; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-        
-        .search-bar { 
-            background: #202025; 
-            border: 1px solid #33333d; 
-            color: white; 
-            border-radius: 30px; 
-            padding-left: 18px; 
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        .search-bar:focus {
-            background: #282830;
-            border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(255, 0, 80, 0.3);
-            color: white;
+        body {
+            background-color: var(--yt-white);
+            color: var(--yt-black);
+            font-family: "Roboto", "Arial", sans-serif;
+            padding-bottom: 70px;
+            margin: 0;
         }
 
-        /* ফিক্সড ভিডিও প্লেয়ার (Top Sticky) */
-        .player-wrapper { 
-            position: sticky; 
-            top: 61px; 
-            z-index: 999; 
-            background: #000; 
-            border-bottom: 1px solid #2a2a35;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        /* হেডার ডিজাইন */
+        .yt-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: var(--yt-white);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .embed-container { 
-            position: relative; 
-            padding-bottom: 56.25%; 
-            height: 0; 
-            overflow: hidden; 
-            background: #000; 
-        }
-        .embed-container iframe { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            border: 0; 
-        }
-        
-        /* ভিডিও কার্ডস ডিজাইন */
-        .v-card { 
-            background: var(--card-bg); 
-            border-radius: 14px; 
-            overflow: hidden; 
-            margin-bottom: 16px; 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            cursor: pointer; 
-            transition: transform 0.2s, background 0.2s;
-        }
-        .v-card:active { transform: scale(0.98); }
-        .v-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-        .v-title { padding: 12px; font-size: 13.5px; font-weight: 600; height: 58px; overflow: hidden; line-height: 1.3; color: #e1e1e1; }
-        
-        /* হিস্ট্রি কার্ড */
-        .history-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 10px;
-            margin-bottom: 10px;
+
+        .yt-logo {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            color: #0f0f0f;
             display: flex;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .yt-logo i {
+            color: #ff0000;
+            font-size: 24px;
+            margin-right: 4px;
+        }
+
+        .search-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            padding: 8px;
+            align-items: center;
+        }
+
+        .search-input {
+            background: #f8f8f8;
+            border: 1px solid var(--yt-border);
+            border-radius: 20px;
+            padding: 6px 15px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        /* ট্যাগ ফিল্টার বার */
+        .tag-bar {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 6px 12px;
+            gap: 8px;
+            background: var(--yt-white);
+            border-bottom: 1px solid var(--yt-border);
+            position: sticky;
+            top: 52px;
+            z-index: 998;
+        }
+
+        .tag-bar::-webkit-scrollbar { display: none; }
+
+        .tag-chip {
+            background: var(--yt-gray-bg);
+            color: var(--yt-black);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
+        .tag-chip.active {
+            background: var(--yt-black);
+            color: var(--yt-white);
+        }
+
+        /* স্টিকি প্লেয়ার */
+        .player-wrapper {
+            position: sticky;
+            top: 96px;
+            z-index: 999;
+            background: #000;
+        }
+
+        .embed-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* ভিডিও ফিড কার্ড */
+        .yt-card {
+            margin-bottom: 16px;
             cursor: pointer;
         }
-        .history-card img { width: 90px; height: 50px; border-radius: 8px; object-fit: cover; margin-right: 12px; }
-        .history-title { font-size: 13px; font-weight: 500; color: #ddd; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* বটম নেভিগেশন */
-        .bottom-nav { 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            background: rgba(18, 18, 22, 0.95); 
-            backdrop-filter: blur(10px);
-            display: flex; 
-            justify-content: space-around; 
-            padding: 8px 0; 
-            border-top: 1px solid rgba(255, 255, 255, 0.08); 
-            z-index: 2000; 
+        .yt-card img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
         }
-        .nav-btn { background: none; border: none; color: #777; font-size: 10px; flex: 1; font-weight: 600; }
-        .nav-btn.active { color: var(--primary); }
-        .nav-btn i { font-size: 18px; display: block; margin-bottom: 2px; }
-        
-        .section { display: none; padding-top: 8px; }
+
+        .yt-card-details {
+            display: flex;
+            padding: 12px;
+        }
+
+        .channel-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .yt-title {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.3;
+            max-height: 36px;
+            overflow: hidden;
+            color: var(--yt-black);
+        }
+
+        /* অরিজিনাল বটম নেভিগেশন */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--yt-white);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0;
+            border-top: 1px solid var(--yt-border);
+            z-index: 2000;
+        }
+
+        .nav-item-btn {
+            background: none;
+            border: none;
+            color: #0f0f0f;
+            font-size: 10px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-item-btn i {
+            font-size: 18px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .nav-item-btn.plus-btn i {
+            font-size: 32px;
+            line-height: 18px;
+        }
+
+        .section { display: none; }
         .section.active { display: block; }
-        
-        .action-btn { 
-            border-radius: 20px; 
-            font-weight: 600; 
-            font-size: 11px; 
-            padding: 5px 12px;
-        }
     </style>
 </head>
 <body>
 
-<!-- হেডার / সার্চ বার -->
-<div class="header d-flex align-items-center justify-content-between">
-    <div class="input-group me-2">
-        <input type="text" id="searchInput" class="form-control search-bar" placeholder="গান বা ভিডিও সার্চ করুন...">
-        <button class="btn btn-danger rounded-circle ms-2 px-3" onclick="handleSearch()"><i class="fas fa-search"></i></button>
+<!-- ইউটিউব অরিজিনাল হেডার -->
+<div class="yt-header">
+    <a href="#" class="yt-logo">
+        <i class="fab fa-youtube"></i> YouTube
+    </a>
+    <div>
+        <i class="fas fa-search me-3 fs-5" onclick="toggleSearch()" style="cursor: pointer;"></i>
+        <a href="/logout" class="text-dark"><i class="fas fa-sign-out-alt fs-5"></i></a>
     </div>
-    <a href="/logout" class="btn btn-outline-secondary btn-sm text-nowrap rounded-circle p-2"><i class="fas fa-sign-out-alt"></i></a>
+
+    <!-- হিডেন সার্চ ফিল্ড -->
+    <div id="searchBar" class="search-container">
+        <i class="fas fa-arrow-left me-2 fs-5" onclick="toggleSearch()"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search YouTube" onkeydown="if(event.key === 'Enter') handleSearch()">
+        <i class="fas fa-search ms-2 text-secondary" onclick="handleSearch()"></i>
+    </div>
 </div>
 
-<!-- Home সেকশন (উপরে ভিডিও প্লেয়ার, নিচে আনলিমিটেড স্ক্রোল ভিডিও) -->
+<!-- ট্যাগ ফিল্টার অপশন -->
+<div class="tag-bar">
+    <button class="tag-chip active" onclick="filterCategory('All', this)">All</button>
+    <button class="tag-chip" onclick="filterCategory('Bangla Drama', this)">Drama</button>
+    <button class="tag-chip" onclick="filterCategory('Bangla Music', this)">Music</button>
+    <button class="tag-chip" onclick="filterCategory('Tech', this)">Tech</button>
+    <button class="tag-chip" onclick="filterCategory('News', this)">News</button>
+</div>
+
+<!-- HOME SECTION -->
 <div id="home-sec" class="section active">
     
-    <!-- ফিক্সড স্টিকি প্লেয়ার -->
+    <!-- ফিক্সড ভিডিও প্লেয়ার -->
     <div class="player-wrapper">
         <div class="embed-container">
             <iframe id="playerIframe" src="" allowfullscreen></iframe>
         </div>
-        <div class="p-2 px-3 bg-dark d-flex justify-content-between align-items-center">
-            <small id="playTitle" class="text-truncate me-2 text-warning fw-semibold" style="max-width: 55%;">ভিডিও প্লে করতে নিচে ক্লিক করুন</small>
+        <div class="p-2 px-3 bg-light d-flex justify-content-between align-items-center border-bottom">
+            <small id="playTitle" class="text-truncate me-2 fw-bold" style="max-width: 60%;">ভিডিও প্লে করতে তালিকায় ক্লিক করুন</small>
             <div>
-                <button onclick="startDownload('mp4')" class="btn btn-info btn-sm action-btn"><i class="fas fa-download"></i> MP4</button>
-                <button onclick="startDownload('mp3')" class="btn btn-warning btn-sm action-btn"><i class="fas fa-music"></i> MP3</button>
+                <button onclick="startDownload('mp4')" class="btn btn-outline-danger btn-sm rounded-pill fw-bold" style="font-size: 11px;"><i class="fas fa-download"></i> MP4</button>
+                <button onclick="startDownload('mp3')" class="btn btn-outline-dark btn-sm rounded-pill fw-bold" style="font-size: 11px;"><i class="fas fa-music"></i> MP3</button>
             </div>
         </div>
     </div>
 
     <!-- আনলিমিটেড ভিডিও ফিড -->
-    <div class="container mt-3">
-        <div id="video-feed" class="row row-cols-1 row-cols-md-2 row-cols-lg-3"></div>
-        <div id="loader" class="text-center p-3" style="display:none;"><div class="spinner-border text-danger"></div></div>
-    </div>
+    <div id="video-feed"></div>
+    <div id="loader" class="text-center p-3" style="display:none;"><div class="spinner-border text-danger"></div></div>
 </div>
 
-<!-- Downloads সেকশন -->
-<div id="download-sec" class="section container">
-    <h6 class="mb-3 text-danger fw-bold"><i class="fas fa-download me-2"></i>ডাউনলোড পেজ</h6>
-    <div class="p-3 bg-dark rounded-4 border border-secondary text-center shadow">
-        <p class="mb-1 text-secondary small">বর্তমানে সিলেক্ট করা ভিডিও:</p>
-        <p id="downloadSelectedTitle" class="fw-bold text-info">কোনো ভিডিও প্লে করা হয়নি</p>
-        <hr class="border-secondary my-3">
-        <div class="d-grid gap-2 col-11 mx-auto">
-            <button onclick="startDownload('mp4')" class="btn btn-info fw-bold py-2 rounded-3"><i class="fas fa-video me-1"></i> Download MP4 Video</button>
-            <button onclick="startDownload('mp3')" class="btn btn-warning fw-bold py-2 rounded-3"><i class="fas fa-music me-1"></i> Download MP3 Audio</button>
+<!-- DOWNLOADS SECTION -->
+<div id="download-sec" class="section p-3">
+    <h6 class="fw-bold mb-3"><i class="fas fa-download me-2 text-danger"></i>Downloads</h6>
+    <div class="card p-3 shadow-sm border-0 bg-light text-center">
+        <p class="text-muted small mb-1">Selected Video:</p>
+        <p id="downloadSelectedTitle" class="fw-bold text-dark">No Video Selected</p>
+        <hr>
+        <div class="d-grid gap-2">
+            <button onclick="startDownload('mp4')" class="btn btn-danger fw-bold rounded-3"><i class="fas fa-video me-1"></i> Download MP4 Video</button>
+            <button onclick="startDownload('mp3')" class="btn btn-dark fw-bold rounded-3"><i class="fas fa-music me-1"></i> Download MP3 Audio</button>
         </div>
     </div>
 </div>
 
-<!-- History সেকশন -->
-<div id="history-sec" class="section container">
+<!-- YOU / HISTORY SECTION -->
+<div id="history-sec" class="section p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0 text-danger fw-bold"><i class="fas fa-history me-2"></i>প্লে হিস্ট্রি</h6>
-        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="clearHistory()"><i class="fas fa-trash me-1"></i>Clear</button>
+        <h6 class="fw-bold mb-0"><i class="fas fa-history me-2 text-danger"></i>History</h6>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="clearHistory()">Clear All</button>
     </div>
     <div id="history-list"></div>
 </div>
 
-<!-- বটম নেভিগেশন বার -->
+<!-- অরিজিনাল বটম নেভিগেশন বার -->
 <div class="bottom-nav">
-    <button class="nav-btn active" onclick="showSection('home', this)"><i class="fas fa-home"></i>Home</button>
-    <button class="nav-btn" onclick="showSection('download', this)"><i class="fas fa-download"></i>Downloads</button>
-    <button class="nav-btn" onclick="showSection('history', this)"><i class="fas fa-history"></i>History</button>
+    <button class="nav-item-btn" onclick="showSection('home', this)"><i class="fas fa-home"></i>Home</button>
+    <button class="nav-item-btn" onclick="showSection('download', this)"><i class="fas fa-download"></i>Downloads</button>
+    <button class="nav-item-btn plus-btn" onclick="toggleSearch()"><i class="far fa-plus-square"></i></button>
+    <button class="nav-item-btn" onclick="showSection('history', this)"><i class="fas fa-user"></i>You</button>
 </div>
 
 <script>
@@ -202,7 +290,6 @@
     let isLoading = false;
     let playHistory = JSON.parse(localStorage.getItem('user_history') || '[]');
 
-    // ১. ভিডিও সার্চ ও ফিড লোড
     async function loadVideos(q, append = false) {
         if(isLoading) return;
         isLoading = true;
@@ -218,10 +305,13 @@
             data.videos.forEach(v => {
                 const cleanTitle = v.title.replace(/'/g, "");
                 feed.innerHTML += `
-                    <div class="col">
-                        <div class="v-card" onclick="playThis('${v.url}', '${v.videoId}', '${cleanTitle}', '${v.thumbnail}')">
-                            <img src="${v.thumbnail}">
-                            <div class="v-title">${v.title}</div>
+                    <div class="yt-card" onclick="playThis('${v.url}', '${v.videoId}', '${cleanTitle}', '${v.thumbnail}')">
+                        <img src="${v.thumbnail}">
+                        <div class="yt-card-details">
+                            <div class="channel-avatar"></div>
+                            <div>
+                                <div class="yt-title">${v.title}</div>
+                            </div>
                         </div>
                     </div>`;
             });
@@ -232,26 +322,20 @@
         isLoading = false;
     }
 
-    // ২. ভিডিও প্লে করা ও হিস্ট্রি সেভ করা
     function playThis(url, videoId, title, thumbnail) {
         playingUrl = url;
         document.getElementById('playTitle').innerText = title;
         document.getElementById('downloadSelectedTitle').innerText = title;
         document.getElementById('playerIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
         
-        // হিস্ট্রিতে যোগ করা
         addToHistory({ url, videoId, title, thumbnail });
-        
-        // হোম সেকশনে নিয়ে যাওয়া এবং উপরে স্ক্রোল করা
-        showSection('home', document.querySelectorAll('.nav-btn')[0]);
+        showSection('home');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ৩. হিস্ট্রি প্রসেস ও রেন্ডার
     function addToHistory(item) {
-        // ডুপ্লিকেট রিমুভ
         playHistory = playHistory.filter(h => h.videoId !== item.videoId);
-        playHistory.unshift(item); // একদম উপরে যোগ করা
+        playHistory.unshift(item);
         localStorage.setItem('user_history', JSON.stringify(playHistory));
         renderHistory();
     }
@@ -259,7 +343,7 @@
     function renderHistory() {
         const container = document.getElementById('history-list');
         if(playHistory.length === 0) {
-            container.innerHTML = `<p class="text-center text-secondary mt-4">এখনো কোনো প্লে হিস্ট্রি নেই</p>`;
+            container.innerHTML = `<p class="text-center text-muted mt-4">No watch history available</p>`;
             return;
         }
         
@@ -267,9 +351,11 @@
         playHistory.forEach(item => {
             const cleanTitle = item.title.replace(/'/g, "");
             container.innerHTML += `
-                <div class="history-card" onclick="playThis('${item.url}', '${item.videoId}', '${cleanTitle}', '${item.thumbnail}')">
-                    <img src="${item.thumbnail}">
-                    <div class="history-title">${item.title}</div>
+                <div class="d-flex mb-3 border-bottom pb-2" style="cursor:pointer;" onclick="playThis('${item.url}', '${item.videoId}', '${cleanTitle}', '${item.thumbnail}')">
+                    <img src="${item.thumbnail}" style="width: 120px; aspect-ratio:16/9; object-fit:cover; border-radius: 8px;" class="me-2">
+                    <div>
+                        <div class="fw-bold small text-dark">${item.title}</div>
+                    </div>
                 </div>`;
         });
     }
@@ -280,32 +366,37 @@
         renderHistory();
     }
 
-    // ৪. সেকশন পরিবর্তন
     function showSection(name, element) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        
         document.getElementById(name + '-sec').classList.add('active');
-        if(element) element.classList.add('active');
     }
 
-    // ৫. সার্চ হ্যান্ডলার
+    function filterCategory(cat, btn) {
+        document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        currentQuery = cat === 'All' ? 'Bangla new songs' : cat;
+        nextPageToken = "";
+        loadVideos(currentQuery);
+    }
+
+    function toggleSearch() {
+        const bar = document.getElementById('searchBar');
+        bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+    }
+
     function handleSearch() {
         const val = document.getElementById('searchInput').value;
-        if(val.includes('youtube.com') || val.includes('youtu.be')) {
-            let vid = val.split('v=')[1] || val.split('/').pop();
-            playThis(val, vid, "Custom Link Video", "https://img.youtube.com/vi/"+vid+"/hqdefault.jpg");
-        } else {
+        if(val) {
             currentQuery = val;
             nextPageToken = "";
             loadVideos(val);
-            showSection('home', document.querySelectorAll('.nav-btn')[0]);
+            toggleSearch();
+            showSection('home');
         }
     }
 
-    // ৬. ডাউনলোড ট্রিগার
     function startDownload(type) {
-        if(!playingUrl) return alert("প্রথমে একটি ভিডিও প্লে করুন।");
+        if(!playingUrl) return alert("Please play a video first.");
         let cleanUrl = encodeURIComponent(playingUrl);
         let downloadLink = type === 'mp3' 
             ? `https://loader.to/api/card/?url=${cleanUrl}&f=mp3`
@@ -314,7 +405,6 @@
         window.open(downloadLink, '_blank');
     }
 
-    // ৭. আনলিমিটেড স্ক্রলিং
     window.onscroll = () => {
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
             if(document.getElementById('home-sec').classList.contains('active') && nextPageToken) {
