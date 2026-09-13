@@ -77,10 +77,10 @@
 <!-- MAIN CONTENT CONTAINER -->
 <main class="max-w-7xl mx-auto p-2 sm:p-4">
 
-    <!-- WATCH VIEW PLAYER -->
+    <!-- WATCH VIEW PLAYER (FIXED PLAYBACK ISSUE) -->
     <div id="watchView" class="hidden mb-6 bg-black rounded-xl overflow-hidden shadow-lg sticky top-28 z-40">
         <div class="w-full aspect-video">
-            <iframe id="mainPlayer" class="w-full h-full" src="" allowfullscreen></iframe>
+            <iframe id="mainPlayer" class="w-full h-full" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         </div>
         <div class="p-3 bg-white border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
@@ -126,7 +126,7 @@
     </div>
 </div>
 
-<!-- NEW BOTTOM NAVIGATION BAR (Home, Shorts, Download) -->
+<!-- BOTTOM NAVIGATION BAR -->
 <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50">
     <button onclick="resetFeed()" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
@@ -190,7 +190,9 @@
         document.getElementById('watchTitle').innerText = title;
         document.getElementById('watchChannel').innerText = channel;
         document.getElementById('downloadSelectedTitle').innerText = title;
-        document.getElementById('mainPlayer').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        
+        // youtube-nocookie এবং প্রয়োজনীয় প্যারামিটার যুক্ত করে এরর ফিক্স করা হয়েছে
+        document.getElementById('mainPlayer').src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`;
         
         document.getElementById('watchView').classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -274,5 +276,4 @@
     };
 </script>
 </body>
-            </html>
-            
+</html>
