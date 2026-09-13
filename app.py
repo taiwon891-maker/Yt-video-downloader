@@ -8,12 +8,12 @@ import requests
 
 app = Flask(__name__)
 
-# ১. ফিক্সড সিক্রেট কি (যাতে সার্ভার রিস্টার্ট হলেও সেশন না ভাঙে)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'my-permanent-fixed-secret-key-998877')
+# ১. ফিক্সড সিক্রেট কি (সার্ভার রিস্টার্ট হলেও সেশন বজায় রাখে)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fixed-youtube-downloader-secret-key-2026')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ২. লগইন সেশনের মেয়াদ ৩০ দিন পর্যন্ত বাড়ানো হলো
+# ২. সেশনের মেয়াদ ৩০ দিন পর্যন্ত স্থায়ী করা হলো (বারবার লগইন লাগবে না)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
 db = SQLAlchemy(app)
@@ -44,16 +44,15 @@ def register():
         
         user_exists = User.query.filter_by(username=username).first()
         if user_exists:
-            flash('এই ইউজারনেমটি ইতোমধ্যে ব্যবহৃত হয়েছে।', 'danger')
+            flash('ইউজারনেমটি ইতোমধ্যে নিবন্ধিত।', 'danger')
             return redirect(url_for('register'))
             
-        # Standard pbkdf2:sha256 হ্যাশিং
         hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(username=username, password=hashed_pw)
         db.session.add(new_user)
         db.session.commit()
         
-        flash('রেজিস্ট্রেশন সফল হয়েছে! লগইন করুন।', 'success')
+        flash('রেজিস্ট্রেশন সফল হয়েছে! লগইন করুন।', 'success')
         return redirect(url_for('login'))
         
     return render_template('register.html')
@@ -66,7 +65,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and check_password_hash(user.password, password):
-            # ৩. remember=True দিলে ব্রাউজার সেশন সেভ থাকবে (বারবার লগইন লাগবে না)
+            # ৩. remember=True দিলে কুকিতে ব্রাউজার সেশন সেভ থাকবে
             login_user(user, remember=True)
             return redirect(url_for('index'))
         else:
@@ -80,7 +79,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# --- Main App Routes ---
+# --- YouTube Search & Main App Routes ---
 
 @app.route('/')
 @login_required
@@ -101,7 +100,8 @@ def search():
                 "title": item['snippet']['title'],
                 "thumbnail": item['snippet']['thumbnails']['high']['url'],
                 "url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
-                "videoId": item['id']['videoId']
+                "videoId": item['id']['videoId'],
+                "channel": item['snippet']['channelTitle']
             })
         return jsonify({"videos": videos, "nextPageToken": r.get('nextPageToken', '')})
     except Exception:
