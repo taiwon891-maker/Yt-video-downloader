@@ -3,152 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube</title>
-    <!-- Tailwind CSS -->
+    <title>YouTube Player & Downloader</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body { margin: 0; padding-bottom: 70px; font-family: Roboto, Arial, sans-serif; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .download-panel-animation { animation: panelIn .2s ease; }
-        @keyframes panelIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         .tag-btn.active { background-color: #0f0f0f; color: #ffffff; }
     </style>
 </head>
-<body class="bg-white text-black">
+<body class="bg-white text-gray-900 pb-20">
 
-<!-- HEADER -->
+<!-- Header -->
 <header class="flex items-center justify-between px-4 h-14 sticky top-0 bg-white z-50 border-b border-gray-100">
-    <div class="flex items-center space-x-3">
-        <div onclick="resetFeed()" class="flex items-center space-x-1 cursor-pointer">
-            <i class="fa-brands fa-youtube text-red-600 text-3xl"></i>
-            <span class="font-bold text-xl tracking-tighter">YouTube</span>
-        </div>
+    <div class="flex items-center space-x-2 cursor-pointer" onclick="resetFeed()">
+        <i class="fa-brands fa-youtube text-red-600 text-2xl"></i>
+        <span class="font-bold text-lg tracking-tighter">YouTube</span>
     </div>
 
-    <!-- Desktop Search -->
-    <div class="hidden md:flex items-center flex-1 max-w-xl mx-8">
-        <div class="flex w-full border border-gray-300 rounded-l-full px-4 py-1.5">
-            <input type="text" id="searchInput" placeholder="Search YouTube" onkeydown="if(event.key === 'Enter') searchVideos()" class="w-full outline-none text-sm">
-        </div>
-        <button onclick="searchVideos()" class="bg-gray-100 border border-l-0 border-gray-300 px-6 py-1.5 rounded-r-full text-gray-700">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-    </div>
-
-    <!-- Right Controls -->
-    <div class="flex items-center space-x-4">
-        <button onclick="toggleMobileSearch()" class="md:hidden text-xl text-gray-700"><i class="fa-solid fa-magnifying-glass"></i></button>
-        <a href="/logout" class="text-xl text-gray-700" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
-        <div class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-            {{ username[0].upper() if username else 'U' }}
+    <div class="flex-1 max-w-xs mx-2">
+        <div class="flex items-center border border-gray-300 rounded-full px-3 py-1 bg-gray-50">
+            <input type="text" id="searchInput" placeholder="Search..." onkeydown="if(event.key === 'Enter') handleSearch()" class="w-full bg-transparent outline-none text-xs">
+            <button onclick="handleSearch()" class="text-gray-600 pl-1"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
         </div>
     </div>
 </header>
 
-<!-- MOBILE SEARCH BAR -->
-<div id="mobileSearch" class="hidden px-4 py-2 bg-white border-b md:hidden">
-    <div class="flex">
-        <input type="text" id="mobileSearchInput" placeholder="Search YouTube" onkeydown="if(event.key === 'Enter') mobileSearchVideos()" class="w-full border border-gray-300 rounded-l-full px-4 py-2 text-sm outline-none">
-        <button onclick="mobileSearchVideos()" class="bg-gray-100 border border-l-0 border-gray-300 px-4 rounded-r-full">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-    </div>
-</div>
-
-<!-- CATEGORY BAR -->
-<nav class="flex space-x-2 px-4 py-2.5 overflow-x-auto scrollbar-hide border-b border-gray-200 sticky top-14 bg-white z-40">
-    <button onclick="filterCategory('All', this)" class="tag-btn active bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">All</button>
-    <button onclick="filterCategory('Bangla Natok', this)" class="tag-btn bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">Drama</button>
-    <button onclick="filterCategory('Bangla Songs', this)" class="tag-btn bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">Music</button>
-    <button onclick="filterCategory('Tech News', this)" class="tag-btn bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">Tech</button>
-    <button onclick="filterCategory('News', this)" class="tag-btn bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">News</button>
-    <button onclick="filterCategory('Gaming', this)" class="tag-btn bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap">Gaming</button>
+<!-- Category Tabs -->
+<nav class="flex space-x-2 px-3 py-2 overflow-x-auto scrollbar-hide border-b border-gray-100 sticky top-14 bg-white z-40">
+    <button onclick="filterCategory('All', this)" class="tag-btn active bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">All</button>
+    <button onclick="filterCategory('Drama', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Drama</button>
+    <button onclick="filterCategory('Music', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Music</button>
+    <button onclick="filterCategory('Tech', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Tech</button>
 </nav>
 
-<!-- MAIN CONTENT CONTAINER -->
-<main class="max-w-7xl mx-auto p-2 sm:p-4">
+<!-- Main Container -->
+<main class="max-w-4xl mx-auto p-2">
 
-    <!-- WATCH VIEW PLAYER (FIXED PLAYBACK ISSUE) -->
-    <div id="watchView" class="hidden mb-6 bg-black rounded-xl overflow-hidden shadow-lg sticky top-28 z-40">
-        <div class="w-full aspect-video">
-            <iframe id="mainPlayer" class="w-full h-full" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-        </div>
-        <div class="p-3 bg-white border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div>
-                <h1 id="watchTitle" class="text-base font-bold line-clamp-2">ভিডিও সিলেক্ট করুন</h1>
-                <p id="watchChannel" class="text-xs text-gray-500">YouTube Channel</p>
+    <!-- Home Section -->
+    <section id="home-sec">
+        <div id="video-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- Playing Section -->
+    <section id="playing-sec" class="hidden">
+        <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-md">
+            <div class="aspect-video w-full relative">
+                <iframe id="mainPlayer" class="w-full h-full" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
-            <div class="flex gap-2 w-full sm:w-auto">
-                <button onclick="startDownload('mp4')" class="flex-1 sm:flex-none bg-red-600 text-white hover:bg-red-700 px-4 py-1.5 rounded-full text-xs font-semibold">
-                    <i class="fa-solid fa-download me-1"></i> MP4
-                </button>
-                <button onclick="startDownload('mp3')" class="flex-1 sm:flex-none bg-black text-white hover:bg-gray-800 px-4 py-1.5 rounded-full text-xs font-semibold">
-                    <i class="fa-solid fa-music me-1"></i> MP3
-                </button>
+            <div class="p-3 bg-white border-b">
+                <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
+                <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
+                
+                <!-- Player Fallback Button for Disabled Embeds -->
+                <div id="embed-warning" class="mt-2 hidden">
+                    <button onclick="switchPlayer()" class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded border border-amber-300 w-full text-left flex items-center justify-between">
+                        <span><i class="fa-solid fa-triangle-exclamation me-1"></i> ভিডিও প্লে না হলে প্লেয়ার মোড পরিবর্তন করুন</span>
+                        <span class="font-bold underline">Switch</span>
+                    </button>
+                </div>
+
+                <div class="flex gap-2 mt-3" id="dl-buttons">
+                    <button onclick="downloadClient('1080')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 1080p</button>
+                    <button onclick="downloadClient('720')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 720p</button>
+                    <button onclick="downloadClient('mp3')" class="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-music me-1"></i> MP3</button>
+                </div>
             </div>
         </div>
+
+        <!-- Dynamic Related Videos -->
+        <div class="mt-4">
+            <h2 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider px-1">Up Next / Suggested Videos</h2>
+            <div id="related-feed" class="space-y-3"></div>
+        </div>
+    </section>
+
+    <!-- Loader -->
+    <div id="loader" class="text-center py-6 hidden">
+        <i class="fa-solid fa-spinner fa-spin text-xl text-red-600"></i>
     </div>
 
-    <!-- VIDEO FEED GRID -->
-    <div id="videoFeed" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-    <div id="loader" class="text-center py-6 hidden"><i class="fa-solid fa-spinner fa-spin text-2xl text-red-600"></i></div>
 </main>
 
-<!-- DOWNLOAD PANEL -->
-<div id="downloadPanel" class="hidden fixed inset-0 bg-white z-[70] overflow-y-auto download-panel-animation">
-    <div class="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <button onclick="closeDownloadPanel()" class="text-xl"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 class="font-bold text-lg">Downloads</h2>
-        </div>
-    </div>
-
-    <div class="max-w-3xl mx-auto p-4 text-center py-10">
-        <p class="text-gray-600 text-sm mb-4">বর্তমানে প্লে হওয়া ভিডিও ডাউনলোড করুন:</p>
-        <p id="downloadSelectedTitle" class="font-bold text-base mb-6 text-gray-800">কোনো ভিডিও প্লে করা হয়নি</p>
-        <div class="flex justify-center gap-4">
-            <button onclick="startDownload('mp4')" class="bg-red-600 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow hover:bg-red-700">
-                <i class="fa-solid fa-video me-2"></i> Download MP4
-            </button>
-            <button onclick="startDownload('mp3')" class="bg-black text-white px-6 py-2.5 rounded-full font-bold text-sm shadow hover:bg-gray-800">
-                <i class="fa-solid fa-music me-2"></i> Download MP3
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- BOTTOM NAVIGATION BAR -->
-<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50">
-    <button onclick="resetFeed()" class="flex flex-col items-center text-red-600">
+<!-- Bottom Nav -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
+    <button onclick="showSection('home')" id="nav-home" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
-        <span class="text-[10px] mt-1">Home</span>
+        <span class="text-[10px] mt-0.5">Home</span>
     </button>
-    <button onclick="loadShorts()" class="flex flex-col items-center text-gray-600 hover:text-black">
+    <button onclick="loadShorts()" id="nav-shorts" class="flex flex-col items-center text-gray-600">
         <i class="fa-solid fa-bolt text-lg"></i>
-        <span class="text-[10px] mt-1">Shorts</span>
-    </button>
-    <button onclick="openDownloadPanel()" class="flex flex-col items-center text-gray-600 hover:text-black">
-        <i class="fa-solid fa-download text-lg"></i>
-        <span class="text-[10px] mt-1">Download</span>
+        <span class="text-[10px] mt-0.5">Shorts</span>
     </button>
 </footer>
 
 <script>
     let nextPageToken = "";
     let currentQuery = "Bangla new songs";
-    let playingUrl = "";
+    let currentVideoId = "";
     let isLoading = false;
+    let activeTab = "home";
+    let isAltPlayer = false;
 
-    async function loadVideos(q, append = false) {
+    async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
         if (isLoading) return;
         isLoading = true;
         document.getElementById('loader').classList.remove('hidden');
@@ -156,54 +114,96 @@
         try {
             const res = await fetch(`/search?q=${encodeURIComponent(q)}&pageToken=${nextPageToken}`);
             const data = await res.json();
-            const feed = document.getElementById('videoFeed');
+            const feed = document.getElementById(targetFeedId);
 
             if (!append) feed.innerHTML = "";
 
-            data.videos.forEach(v => {
-                const cleanTitle = v.title.replace(/'/g, "");
-                feed.innerHTML += `
-                    <div class="cursor-pointer group" onclick="playVideo('${v.url}', '${v.videoId}', '${cleanTitle}', '${v.channel}')">
-                        <div class="relative aspect-video rounded-xl overflow-hidden bg-gray-200">
-                            <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
-                        </div>
-                        <div class="flex gap-3 mt-3">
-                            <div class="w-9 h-9 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center font-bold text-sm text-gray-700">
-                                ${v.channel ? v.channel[0] : 'C'}
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-sm line-clamp-2 leading-snug">${v.title}</h3>
-                                <p class="text-xs text-gray-600 mt-1">${v.channel}</p>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            nextPageToken = data.nextPageToken || "";
-        } catch (e) {}
+            if (data.videos && data.videos.length > 0) {
+                data.videos.forEach(v => {
+                    const cleanTitle = v.title.replace(/'/g, "");
+                    
+                    if (targetFeedId === 'related-feed') {
+                        feed.innerHTML += `
+                            <div class="flex gap-2 cursor-pointer bg-gray-50 p-2 rounded-lg" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
+                                <img src="${v.thumbnail}" class="w-32 aspect-video object-cover rounded-md flex-shrink-0">
+                                <div class="overflow-hidden">
+                                    <h3 class="font-semibold text-xs line-clamp-2 text-gray-800">${v.title}</h3>
+                                    <p class="text-[10px] text-gray-500 mt-1">${v.channel}</p>
+                                </div>
+                            </div>`;
+                    } else {
+                        feed.innerHTML += `
+                            <div class="cursor-pointer group" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
+                                <div class="aspect-video rounded-lg overflow-hidden bg-gray-100">
+                                    <img src="${v.thumbnail}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <div class="w-7 h-7 rounded-full bg-red-100 text-red-600 flex-shrink-0 flex items-center justify-center font-bold text-xs">
+                                        ${v.channel ? v.channel[0] : 'Y'}
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <h3 class="font-semibold text-xs line-clamp-2 leading-snug">${v.title}</h3>
+                                        <p class="text-[10px] text-gray-500 mt-0.5">${v.channel}</p>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                });
+                nextPageToken = data.nextPageToken || "";
+            }
+        } catch (e) {
+            console.error(e);
+        }
 
         document.getElementById('loader').classList.add('hidden');
         isLoading = false;
     }
 
-    function playVideo(url, videoId, title, channel) {
-        playingUrl = url;
-        document.getElementById('watchTitle').innerText = title;
-        document.getElementById('watchChannel').innerText = channel;
-        document.getElementById('downloadSelectedTitle').innerText = title;
+    function playThis(videoId, title, channel) {
+        currentVideoId = videoId;
+        isAltPlayer = false;
+        showSection('playing');
+
+        document.getElementById('playTitle').innerText = title;
+        document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
+        document.getElementById('embed-warning').classList.remove('hidden');
+
+        // Bypassing Embedding Restrictions using nocookie + parameters
+        document.getElementById('mainPlayer').src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
         
-        // youtube-nocookie এবং প্রয়োজনীয় প্যারামিটার যুক্ত করে এরর ফিক্স করা হয়েছে
-        document.getElementById('mainPlayer').src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`;
-        
-        document.getElementById('watchView').classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        nextPageToken = "";
+        loadVideos(title, false, 'related-feed');
     }
 
-    function loadShorts() {
-        document.getElementById('watchView').classList.add('hidden');
-        document.getElementById('mainPlayer').src = "";
-        currentQuery = "#shorts";
-        nextPageToken = "";
-        loadVideos(currentQuery);
+    // প্লেব্যাক রেস্ট্রিকশনের জন্য অল্টারনেটিভ প্লেয়ার সার্ভিস সুইচিং
+    function switchPlayer() {
+        if (!currentVideoId) return;
+        const iframe = document.getElementById('mainPlayer');
+        if (!isAltPlayer) {
+            iframe.src = `https://www.youtube.com/embed/${currentVideoId}?origin=${window.location.origin}`;
+            isAltPlayer = true;
+        } else {
+            iframe.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1`;
+            isAltPlayer = false;
+        }
+    }
+
+    function showSection(name) {
+        activeTab = name;
+        document.getElementById('home-sec').classList.add('hidden');
+        document.getElementById('playing-sec').classList.add('hidden');
+
+        document.getElementById('nav-home').className = "flex flex-col items-center text-gray-600";
+        document.getElementById('nav-shorts').className = "flex flex-col items-center text-gray-600";
+
+        if (name === 'home') {
+            document.getElementById('home-sec').classList.remove('hidden');
+            document.getElementById('nav-home').className = "flex flex-col items-center text-red-600";
+        } else if (name === 'playing') {
+            document.getElementById('playing-sec').classList.remove('hidden');
+        }
     }
 
     function filterCategory(cat, btn) {
@@ -211,69 +211,60 @@
         btn.classList.add('active');
         currentQuery = cat === 'All' ? 'Bangla new songs' : cat;
         nextPageToken = "";
+        showSection('home');
         loadVideos(currentQuery);
     }
 
-    function searchVideos() {
-        const query = document.getElementById('searchInput').value;
-        if (query) {
-            currentQuery = query;
+    function handleSearch() {
+        const val = document.getElementById('searchInput').value.trim();
+        if (val) {
+            currentQuery = val;
             nextPageToken = "";
-            loadVideos(query);
+            showSection('home');
+            loadVideos(val);
         }
     }
 
-    function toggleMobileSearch() {
-        document.getElementById('mobileSearch').classList.toggle('hidden');
-    }
-
-    function mobileSearchVideos() {
-        const query = document.getElementById('mobileSearchInput').value;
-        if (query) {
-            currentQuery = query;
-            nextPageToken = "";
-            loadVideos(query);
-            toggleMobileSearch();
-        }
-    }
-
-    function resetFeed() {
-        document.getElementById('watchView').classList.add('hidden');
-        document.getElementById('mainPlayer').src = "";
-        currentQuery = "Bangla new songs";
+    function loadShorts() {
+        showSection('home');
+        document.getElementById('nav-shorts').className = "flex flex-col items-center text-red-600";
+        document.getElementById('nav-home').className = "flex flex-col items-center text-gray-600";
+        currentQuery = "YouTube Shorts Bangla";
         nextPageToken = "";
         loadVideos(currentQuery);
     }
 
-    function openDownloadPanel() {
-        document.getElementById('downloadPanel').classList.remove('hidden');
+    // ক্লায়েন্ট-সাইড ডাইরেক্ট ডাউনলোডার
+    function downloadClient(format) {
+        if (!currentVideoId) return alert("ভিডিও পাওয়া যায়নি!");
+        const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+        const downloadGateway = `https://loader.to/api/card/?url=${encodeURIComponent(videoUrl)}&f=${format}`;
+        window.open(downloadGateway, '_blank');
     }
 
-    function closeDownloadPanel() {
-        document.getElementById('downloadPanel').classList.add('hidden');
+    function resetFeed() {
+        document.getElementById('mainPlayer').src = "";
+        currentQuery = "Bangla new songs";
+        nextPageToken = "";
+        showSection('home');
+        loadVideos(currentQuery);
     }
 
-    function startDownload(type) {
-        if (!playingUrl) return alert("প্রথমে একটি ভিডিও প্লে করুন।");
-        let cleanUrl = encodeURIComponent(playingUrl);
-        let downloadLink = type === 'mp3' 
-            ? `https://loader.to/api/card/?url=${cleanUrl}&f=mp3`
-            : `https://loader.to/api/card/?url=${cleanUrl}&f=720`;
-            
-        window.open(downloadLink, '_blank');
-    }
-
+    // আনলিমিটেড স্ক্রলিং
     window.onscroll = () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
-            if (nextPageToken) {
-                loadVideos(currentQuery, true);
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            if (nextPageToken && !isLoading) {
+                if (activeTab === 'home') {
+                    loadVideos(currentQuery, true, 'video-feed');
+                } else if (activeTab === 'playing') {
+                    loadVideos(currentQuery, true, 'related-feed');
+                }
             }
         }
     };
 
-    window.onload = () => {
-        loadVideos(currentQuery);
-    };
+    window.onload = () => loadVideos(currentQuery);
 </script>
 </body>
-</html>
+    </html>
+    
