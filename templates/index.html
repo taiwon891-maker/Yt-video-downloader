@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Player & Downloader</title>
+    <title>{{ settings.custom_header_title if settings else 'YouTube Player & Downloader' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -12,6 +12,9 @@
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .tag-btn.active { background-color: #0f0f0f; color: #ffffff; }
     </style>
+
+    <!-- Adsterra Dynamic Head Script -->
+    {{ settings.adsterra_head_script | safe if settings else '' }}
 </head>
 <body class="bg-white text-gray-900 pb-20">
 
@@ -19,7 +22,7 @@
 <header class="flex items-center justify-between px-4 h-14 sticky top-0 bg-white z-50 border-b border-gray-100">
     <div class="flex items-center space-x-2 cursor-pointer" onclick="resetFeed()">
         <i class="fa-brands fa-youtube text-red-600 text-2xl"></i>
-        <span class="font-bold text-lg tracking-tighter">YouTube</span>
+        <span class="font-bold text-lg tracking-tighter">{{ settings.custom_header_title if settings else 'YouTube' }}</span>
     </div>
 
     <div class="flex-1 max-w-xs mx-2">
@@ -49,21 +52,28 @@
     <!-- Playing Section -->
     <section id="playing-sec" class="hidden">
         <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-md">
-            <div class="aspect-video w-full relative">
-                <iframe id="mainPlayer" class="w-full h-full" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div class="aspect-video w-full bg-black relative">
+                <!-- YouTube JS API Target Container -->
+                <div id="player" class="w-full h-full"></div>
             </div>
             <div class="p-3 bg-white border-b">
                 <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
                 <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
-                
-                <!-- Player Fallback Button for Disabled Embeds -->
-                <div id="embed-warning" class="mt-2 hidden">
-                    <button onclick="switchPlayer()" class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded border border-amber-300 w-full text-left flex items-center justify-between">
-                        <span><i class="fa-solid fa-triangle-exclamation me-1"></i> ভিডিও প্লে না হলে প্লেয়ার মোড পরিবর্তন করুন</span>
-                        <span class="font-bold underline">Switch</span>
-                    </button>
+
+                <!-- Restriction Notice & Fallback -->
+                <div class="mt-2 bg-red-50 p-2 rounded border border-red-200 flex items-center justify-between">
+                    <span class="text-[11px] text-red-800 font-medium"><i class="fa-solid fa-play me-1"></i> প্লেব্যাকে সমস্যা হলে সরাসরি খুলুন:</span>
+                    <a id="ytDirectWatch" href="#" target="_blank" class="bg-red-600 text-white text-xs px-2.5 py-1 rounded font-bold flex items-center gap-1 shrink-0">
+                        <i class="fa-brands fa-youtube"></i> Open Video
+                    </a>
                 </div>
 
+                <!-- Adsterra Banner Ad Injection Area -->
+                <div class="mt-3 flex justify-center overflow-hidden">
+                    {{ settings.adsterra_banner_script | safe if settings else '' }}
+                </div>
+
+                <!-- Download Buttons -->
                 <div class="flex gap-2 mt-3" id="dl-buttons">
                     <button onclick="downloadClient('1080')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 1080p</button>
                     <button onclick="downloadClient('720')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 720p</button>
@@ -72,7 +82,7 @@
             </div>
         </div>
 
-        <!-- Dynamic Related Videos -->
+        <!-- Related Videos -->
         <div class="mt-4">
             <h2 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider px-1">Up Next / Suggested Videos</h2>
             <div id="related-feed" class="space-y-3"></div>
@@ -86,7 +96,7 @@
 
 </main>
 
-<!-- Bottom Nav -->
+<!-- Bottom Navigation -->
 <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
     <button onclick="showSection('home')" id="nav-home" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
@@ -98,13 +108,38 @@
     </button>
 </footer>
 
+<!-- Load YouTube IFrame Player API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
     let nextPageToken = "";
     let currentQuery = "Bangla new songs";
     let currentVideoId = "";
     let isLoading = false;
     let activeTab = "home";
-    let isAltPlayer = false;
+    let ytPlayer = null;
+
+    // YouTube HTML5 Player API Callback
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+                'playsinline': 1,
+                'autoplay': 1,
+                'rel': 0,
+                'modestbranding': 1,
+                'origin': window.location.origin
+            },
+            events: {
+                'onError': onPlayerError
+            }
+        });
+    }
+
+    function onPlayerError(event) {
+        console.warn("Player Error Code:", event.data);
+    }
 
     async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
         if (isLoading) return;
@@ -161,33 +196,21 @@
 
     function playThis(videoId, title, channel) {
         currentVideoId = videoId;
-        isAltPlayer = false;
         showSection('playing');
 
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
-        document.getElementById('embed-warning').classList.remove('hidden');
-
-        // Bypassing Embedding Restrictions using nocookie + parameters
-        document.getElementById('mainPlayer').src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+        document.getElementById('ytDirectWatch').href = `https://www.youtube.com/watch?v=${videoId}`;
         
+        // HTML5 Player API-এর মাধ্যমে ভিডিও লোড
+        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+            ytPlayer.loadVideoById(videoId);
+        }
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         nextPageToken = "";
         loadVideos(title, false, 'related-feed');
-    }
-
-    // প্লেব্যাক রেস্ট্রিকশনের জন্য অল্টারনেটিভ প্লেয়ার সার্ভিস সুইচিং
-    function switchPlayer() {
-        if (!currentVideoId) return;
-        const iframe = document.getElementById('mainPlayer');
-        if (!isAltPlayer) {
-            iframe.src = `https://www.youtube.com/embed/${currentVideoId}?origin=${window.location.origin}`;
-            isAltPlayer = true;
-        } else {
-            iframe.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1`;
-            isAltPlayer = false;
-        }
     }
 
     function showSection(name) {
@@ -234,7 +257,6 @@
         loadVideos(currentQuery);
     }
 
-    // ক্লায়েন্ট-সাইড ডাইরেক্ট ডাউনলোডার
     function downloadClient(format) {
         if (!currentVideoId) return alert("ভিডিও পাওয়া যায়নি!");
         const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
@@ -243,14 +265,15 @@
     }
 
     function resetFeed() {
-        document.getElementById('mainPlayer').src = "";
+        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+            ytPlayer.stopVideo();
+        }
         currentQuery = "Bangla new songs";
         nextPageToken = "";
         showSection('home');
         loadVideos(currentQuery);
     }
 
-    // আনলিমিটেড স্ক্রলিং
     window.onscroll = () => {
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
             if (nextPageToken && !isLoading) {
@@ -266,5 +289,4 @@
     window.onload = () => loadVideos(currentQuery);
 </script>
 </body>
-    </html>
-    
+</html>
