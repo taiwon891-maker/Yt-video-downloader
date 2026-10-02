@@ -3,85 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ settings.custom_header_title if settings else 'YouTube Player' }}</title>
+    <title>{{ settings.custom_header_title if settings else 'Snaptube Pro' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .tag-btn.active { background-color: #0f0f0f; color: #ffffff; }
+        .tag-btn.active { background-color: #e50914; color: #ffffff; }
     </style>
 
     {{ settings.adsterra_head_script | safe if settings else '' }}
 </head>
-<body class="bg-white text-gray-900 pb-20">
+<body class="bg-gray-100 text-gray-900 pb-20">
 
 <!-- Header -->
-<header class="flex items-center justify-between px-4 h-14 sticky top-0 bg-white z-50 border-b border-gray-100">
+<header class="flex items-center justify-between px-4 h-14 sticky top-0 bg-white z-50 shadow-sm">
     <div class="flex items-center space-x-2 cursor-pointer" onclick="resetFeed()">
-        <i class="fa-brands fa-youtube text-red-600 text-2xl"></i>
-        <span class="font-bold text-lg tracking-tighter">{{ settings.custom_header_title if settings else 'YouTube' }}</span>
+        <i class="fa-solid fa-circle-play text-red-600 text-2xl"></i>
+        <span class="font-bold text-lg tracking-tighter text-red-600">{{ settings.custom_header_title if settings else 'Snaptube' }}</span>
     </div>
 
     <div class="flex-1 max-w-xs mx-2">
         <div class="flex items-center border border-gray-300 rounded-full px-3 py-1 bg-gray-50">
-            <input type="text" id="searchInput" placeholder="Search..." onkeydown="if(event.key === 'Enter') handleSearch()" class="w-full bg-transparent outline-none text-xs">
+            <input type="text" id="searchInput" placeholder="Search YouTube..." onkeydown="if(event.key === 'Enter') handleSearch()" class="w-full bg-transparent outline-none text-xs">
             <button onclick="handleSearch()" class="text-gray-600 pl-1"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
         </div>
     </div>
 </header>
 
-<!-- Categories -->
-<nav class="flex space-x-2 px-3 py-2 overflow-x-auto scrollbar-hide border-b border-gray-100 sticky top-14 bg-white z-40">
-    <button onclick="filterCategory('All', this)" class="tag-btn active bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">All</button>
-    <button onclick="filterCategory('Drama', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Drama</button>
-    <button onclick="filterCategory('Music', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Music</button>
-    <button onclick="filterCategory('Tech', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Tech</button>
+<!-- Category Pills -->
+<nav class="flex space-x-2 px-3 py-2 overflow-x-auto scrollbar-hide border-b border-gray-200 sticky top-14 bg-white z-40">
+    <button onclick="filterCategory('All', this)" class="tag-btn active bg-gray-200 px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">All</button>
+    <button onclick="filterCategory('Drama', this)" class="tag-btn bg-gray-200 px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Drama</button>
+    <button onclick="filterCategory('Music', this)" class="tag-btn bg-gray-200 px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Music</button>
+    <button onclick="filterCategory('Tech', this)" class="tag-btn bg-gray-200 px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Tech</button>
 </nav>
 
-<!-- Main Container -->
+<!-- Main Feed -->
 <main class="max-w-4xl mx-auto p-2">
 
     <section id="home-sec">
         <div id="video-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
+    <!-- Snaptube Player Engine -->
     <section id="playing-sec" class="hidden">
-        <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-md">
-            <div class="aspect-video w-full bg-black relative">
-                <!-- Smart Web Frame Player -->
-                <iframe id="mainPlayerFrame" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-lg">
+            <div class="aspect-video w-full bg-black relative flex items-center justify-center">
+                
+                <!-- Native HTML5 Stream Player -->
+                <video id="nativeVideo" class="w-full h-full hidden" controls autoplay></video>
+
+                <!-- Web Frame Fallback Player -->
+                <iframe id="webFrame" class="w-full h-full border-0 hidden" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+
+                <!-- Snaptube Loading Animation -->
+                <div id="playerLoader" class="absolute flex flex-col items-center text-white text-xs gap-2">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-red-600"></i>
+                    <span>Loading Stream...</span>
+                </div>
             </div>
 
             <div class="p-3 bg-white border-b">
                 <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
                 <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
 
-                <!-- Mode Switcher -->
-                <div class="mt-2 bg-amber-50 p-2 rounded border border-amber-200 flex items-center justify-between">
-                    <span class="text-[11px] text-amber-800 font-medium"><i class="fa-solid fa-circle-play me-1"></i> ভিডিও প্লে না হলে প্লেয়ার চেঞ্জ করুন:</span>
-                    <button onclick="toggleFallbackPlayer()" class="bg-amber-600 text-white text-xs px-2.5 py-1 rounded font-bold shrink-0">
-                        Switch Player
-                    </button>
-                </div>
-
-                <!-- Adsterra Banner Ad Injection -->
+                <!-- Adsterra Banner -->
                 <div class="mt-3 flex justify-center overflow-hidden">
                     {{ settings.adsterra_banner_script | safe if settings else '' }}
                 </div>
 
-                <!-- Downloads -->
-                <div class="flex gap-2 mt-3" id="dl-buttons">
-                    <button onclick="downloadClient('1080')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 1080p</button>
-                    <button onclick="downloadClient('720')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 720p</button>
-                    <button onclick="downloadClient('mp3')" class="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-music me-1"></i> MP3</button>
+                <!-- Fast Download Bar -->
+                <div class="mt-3 bg-red-50 p-2.5 rounded-lg border border-red-100">
+                    <p class="text-[11px] font-bold text-red-700 mb-2"><i class="fa-solid fa-bolt me-1"></i> Fast Download Options:</p>
+                    <div class="flex gap-2">
+                        <button onclick="downloadClient('1080')" class="bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm hover:bg-red-700"><i class="fa-solid fa-download me-1"></i> 1080p MP4</button>
+                        <button onclick="downloadClient('720')" class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm hover:bg-blue-700"><i class="fa-solid fa-download me-1"></i> 720p MP4</button>
+                        <button onclick="downloadClient('mp3')" class="bg-gray-800 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm hover:bg-gray-900"><i class="fa-solid fa-music me-1"></i> MP3</button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="mt-4">
-            <h2 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider px-1">Up Next / Suggested Videos</h2>
+            <h2 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider px-1">Suggested Videos</h2>
             <div id="related-feed" class="space-y-3"></div>
         </div>
     </section>
@@ -92,14 +98,14 @@
 
 </main>
 
-<footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50 shadow-lg">
     <button onclick="showSection('home')" id="nav-home" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
-        <span class="text-[10px] mt-0.5">Home</span>
+        <span class="text-[10px] mt-0.5 font-bold">Home</span>
     </button>
     <button onclick="loadShorts()" id="nav-shorts" class="flex flex-col items-center text-gray-600">
         <i class="fa-solid fa-bolt text-lg"></i>
-        <span class="text-[10px] mt-0.5">Shorts</span>
+        <span class="text-[10px] mt-0.5 font-bold">Shorts</span>
     </button>
 </footer>
 
@@ -109,7 +115,6 @@
     let currentVideoId = "";
     let isLoading = false;
     let activeTab = "home";
-    let isWebPlayerMode = false;
 
     async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
         if (isLoading) return;
@@ -128,7 +133,7 @@
                     const cleanTitle = v.title.replace(/'/g, "");
                     if (targetFeedId === 'related-feed') {
                         feed.innerHTML += `
-                            <div class="flex gap-2 cursor-pointer bg-gray-50 p-2 rounded-lg" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
+                            <div class="flex gap-2 cursor-pointer bg-white p-2 rounded-lg shadow-sm" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
                                 <img src="${v.thumbnail}" class="w-32 aspect-video object-cover rounded-md flex-shrink-0">
                                 <div class="overflow-hidden">
                                     <h3 class="font-semibold text-xs line-clamp-2 text-gray-800">${v.title}</h3>
@@ -137,13 +142,13 @@
                             </div>`;
                     } else {
                         feed.innerHTML += `
-                            <div class="cursor-pointer group" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
+                            <div class="cursor-pointer group bg-white rounded-xl p-2 shadow-sm" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
                                 <div class="aspect-video rounded-lg overflow-hidden bg-gray-100">
                                     <img src="${v.thumbnail}" class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex gap-2 mt-2">
                                     <div class="w-7 h-7 rounded-full bg-red-100 text-red-600 flex-shrink-0 flex items-center justify-center font-bold text-xs">
-                                        ${v.channel ? v.channel[0] : 'Y'}
+                                        ${v.channel ? v.channel[0] : 'S'}
                                     </div>
                                     <div class="overflow-hidden">
                                         <h3 class="font-semibold text-xs line-clamp-2 leading-snug">${v.title}</h3>
@@ -163,36 +168,46 @@
         isLoading = false;
     }
 
-    function playThis(videoId, title, channel) {
+    async function playThis(videoId, title, channel) {
         currentVideoId = videoId;
-        isWebPlayerMode = false;
         showSection('playing');
 
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
 
-        // স্ট্যান্ডার্ড এম্বেড প্লেয়ার লোড
-        const iframe = document.getElementById('mainPlayerFrame');
-        iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0`;
+        const nativeVideo = document.getElementById('nativeVideo');
+        const webFrame = document.getElementById('webFrame');
+        const loader = document.getElementById('playerLoader');
+
+        nativeVideo.pause();
+        nativeVideo.classList.add('hidden');
+        webFrame.classList.add('hidden');
+        loader.classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/get_stream?id=${videoId}`);
+            const data = await res.json();
+
+            loader.classList.add('hidden');
+
+            if (data.status === 'success' && data.stream_url) {
+                nativeVideo.src = data.stream_url;
+                nativeVideo.classList.remove('hidden');
+                nativeVideo.play();
+            } else {
+                webFrame.src = data.fallback_url;
+                webFrame.classList.remove('hidden');
+            }
+        } catch (e) {
+            loader.classList.add('hidden');
+            webFrame.src = `https://m.youtube.com/watch?v=${videoId}`;
+            webFrame.classList.remove('hidden');
+        }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         nextPageToken = "";
         loadVideos(title, false, 'related-feed');
-    }
-
-    // রেস্ট্রিক্টেড ভিডিও প্লে করার জন্য YouTube Web Player এ সুইচ
-    function toggleFallbackPlayer() {
-        if (!currentVideoId) return;
-        const iframe = document.getElementById('mainPlayerFrame');
-        
-        if (!isWebPlayerMode) {
-            iframe.src = `https://m.youtube.com/watch?v=${currentVideoId}`;
-            isWebPlayerMode = true;
-        } else {
-            iframe.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&playsinline=1&rel=0`;
-            isWebPlayerMode = false;
-        }
     }
 
     function showSection(name) {
@@ -240,14 +255,15 @@
     }
 
     function downloadClient(format) {
-        if (!currentVideoId) return alert("ভিডিও পাওয়া যায়নি!");
+        if (!currentVideoId) return alert("Video not found!");
         const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
         const downloadGateway = `https://loader.to/api/card/?url=${encodeURIComponent(videoUrl)}&f=${format}`;
         window.open(downloadGateway, '_blank');
     }
 
     function resetFeed() {
-        document.getElementById('mainPlayerFrame').src = "";
+        document.getElementById('nativeVideo').pause();
+        document.getElementById('webFrame').src = "";
         currentQuery = "Bangla new songs";
         nextPageToken = "";
         showSection('home');
@@ -269,4 +285,5 @@
     window.onload = () => loadVideos(currentQuery);
 </script>
 </body>
-</html>
+                </html>
+                
