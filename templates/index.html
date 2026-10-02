@@ -13,6 +13,7 @@
         .tag-btn.active { background-color: #e50914; color: #ffffff; }
     </style>
 
+    <!-- Dynamic Adsterra Head Script -->
     {{ settings.adsterra_head_script | safe if settings else '' }}
 </head>
 <body class="bg-gray-100 text-gray-900 pb-20">
@@ -21,7 +22,7 @@
 <header class="flex items-center justify-between px-4 h-14 sticky top-0 bg-white z-50 shadow-sm">
     <div class="flex items-center space-x-2 cursor-pointer" onclick="resetFeed()">
         <i class="fa-solid fa-circle-play text-red-600 text-2xl"></i>
-        <span class="font-bold text-lg tracking-tighter text-red-600">{{ settings.custom_header_title if settings else 'Snaptube' }}</span>
+        <span class="font-bold text-lg tracking-tighter text-red-600">{{ settings.custom_header_title if settings else 'Snaptube Pro' }}</span>
     </div>
 
     <div class="flex-1 max-w-xs mx-2">
@@ -40,41 +41,40 @@
     <button onclick="filterCategory('Tech', this)" class="tag-btn bg-gray-200 px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">Tech</button>
 </nav>
 
-<!-- Main Feed -->
+<!-- Main Feed Container -->
 <main class="max-w-4xl mx-auto p-2">
 
+    <!-- Home Feed -->
     <section id="home-sec">
         <div id="video-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
-    <!-- Snaptube Player Engine -->
+    <!-- Player View Section -->
     <section id="playing-sec" class="hidden">
         <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-lg">
-            <div class="aspect-video w-full bg-black relative flex items-center justify-center">
-                
-                <!-- Native HTML5 Stream Player -->
-                <video id="nativeVideo" class="w-full h-full hidden" controls autoplay></video>
-
-                <!-- Web Frame Fallback Player -->
-                <iframe id="webFrame" class="w-full h-full border-0 hidden" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-
-                <!-- Snaptube Loading Animation -->
-                <div id="playerLoader" class="absolute flex flex-col items-center text-white text-xs gap-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-red-600"></i>
-                    <span>Loading Stream...</span>
-                </div>
+            <div class="aspect-video w-full bg-black relative">
+                <!-- Smart Web Player (Embedded Mobile Frame) -->
+                <iframe id="mainPlayerFrame" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
 
             <div class="p-3 bg-white border-b">
                 <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
                 <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
 
-                <!-- Adsterra Banner -->
+                <!-- Player Switcher Option -->
+                <div class="mt-2 bg-amber-50 p-2 rounded border border-amber-200 flex items-center justify-between">
+                    <span class="text-[11px] text-amber-800 font-medium"><i class="fa-solid fa-triangle-exclamation me-1"></i> ভিডিও প্লে না হলে চাপ দিন:</span>
+                    <button onclick="toggleFallbackPlayer()" class="bg-amber-600 text-white text-xs px-2.5 py-1 rounded font-bold shrink-0">
+                        Switch Mobile Player
+                    </button>
+                </div>
+
+                <!-- Adsterra Banner Ad Injection -->
                 <div class="mt-3 flex justify-center overflow-hidden">
                     {{ settings.adsterra_banner_script | safe if settings else '' }}
                 </div>
 
-                <!-- Fast Download Bar -->
+                <!-- Download Options Bar -->
                 <div class="mt-3 bg-red-50 p-2.5 rounded-lg border border-red-100">
                     <p class="text-[11px] font-bold text-red-700 mb-2"><i class="fa-solid fa-bolt me-1"></i> Fast Download Options:</p>
                     <div class="flex gap-2">
@@ -92,12 +92,14 @@
         </div>
     </section>
 
+    <!-- Global Spinner -->
     <div id="loader" class="text-center py-6 hidden">
         <i class="fa-solid fa-spinner fa-spin text-xl text-red-600"></i>
     </div>
 
 </main>
 
+<!-- Bottom Footer Navigation -->
 <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50 shadow-lg">
     <button onclick="showSection('home')" id="nav-home" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
@@ -115,6 +117,7 @@
     let currentVideoId = "";
     let isLoading = false;
     let activeTab = "home";
+    let isMobilePlayerMode = false;
 
     async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
         if (isLoading) return;
@@ -168,46 +171,37 @@
         isLoading = false;
     }
 
-    async function playThis(videoId, title, channel) {
+    function playThis(videoId, title, channel) {
         currentVideoId = videoId;
+        isMobilePlayerMode = false;
         showSection('playing');
 
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
 
-        const nativeVideo = document.getElementById('nativeVideo');
-        const webFrame = document.getElementById('webFrame');
-        const loader = document.getElementById('playerLoader');
-
-        nativeVideo.pause();
-        nativeVideo.classList.add('hidden');
-        webFrame.classList.add('hidden');
-        loader.classList.remove('hidden');
-
-        try {
-            const res = await fetch(`/get_stream?id=${videoId}`);
-            const data = await res.json();
-
-            loader.classList.add('hidden');
-
-            if (data.status === 'success' && data.stream_url) {
-                nativeVideo.src = data.stream_url;
-                nativeVideo.classList.remove('hidden');
-                nativeVideo.play();
-            } else {
-                webFrame.src = data.fallback_url;
-                webFrame.classList.remove('hidden');
-            }
-        } catch (e) {
-            loader.classList.add('hidden');
-            webFrame.src = `https://m.youtube.com/watch?v=${videoId}`;
-            webFrame.classList.remove('hidden');
-        }
+        const iframe = document.getElementById('mainPlayerFrame');
+        
+        // প্রথমে 标准 nocookie ইম্বেড ট্রাই করবে
+        iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0`;
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         nextPageToken = "";
         loadVideos(title, false, 'related-feed');
+    }
+
+    // রেস্ট্রিক্টেড মিউজিক ভিডিওগুলোর জন্য ডাইরেক্ট Mobile Web Player Mode Switch
+    function toggleFallbackPlayer() {
+        if (!currentVideoId) return;
+        const iframe = document.getElementById('mainPlayerFrame');
+        
+        if (!isMobilePlayerMode) {
+            iframe.src = `https://m.youtube.com/watch?v=${currentVideoId}`;
+            isMobilePlayerMode = true;
+        } else {
+            iframe.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&playsinline=1&rel=0`;
+            isMobilePlayerMode = false;
+        }
     }
 
     function showSection(name) {
@@ -255,15 +249,14 @@
     }
 
     function downloadClient(format) {
-        if (!currentVideoId) return alert("Video not found!");
+        if (!currentVideoId) return alert("ভিডিও পাওয়া যায়নি!");
         const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
         const downloadGateway = `https://loader.to/api/card/?url=${encodeURIComponent(videoUrl)}&f=${format}`;
         window.open(downloadGateway, '_blank');
     }
 
     function resetFeed() {
-        document.getElementById('nativeVideo').pause();
-        document.getElementById('webFrame').src = "";
+        document.getElementById('mainPlayerFrame').src = "";
         currentQuery = "Bangla new songs";
         nextPageToken = "";
         showSection('home');
@@ -285,5 +278,4 @@
     window.onload = () => loadVideos(currentQuery);
 </script>
 </body>
-                </html>
-                
+</html>
