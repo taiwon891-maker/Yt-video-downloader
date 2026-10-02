@@ -17,7 +17,7 @@ def load_settings():
         default_settings = {
             "adsterra_head_script": "<!-- Adsterra Head Script -->",
             "adsterra_banner_script": "<!-- Adsterra Banner Script -->",
-            "custom_header_title": "YouTube Player & Downloader"
+            "custom_header_title": "Snaptube Pro"
         }
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump(default_settings, f, ensure_ascii=False, indent=4)
@@ -29,7 +29,7 @@ def load_settings():
         return {
             "adsterra_head_script": "",
             "adsterra_banner_script": "",
-            "custom_header_title": "YouTube Player & Downloader"
+            "custom_header_title": "Snaptube Pro"
         }
 
 def save_settings(data):
@@ -64,31 +64,35 @@ def search():
     except Exception as e:
         return jsonify({"videos": [], "nextPageToken": "", "error": str(e)})
 
-@app.route('/get_proxy_stream')
-def get_proxy_stream():
+# Snaptube Style Proxy Stream Provider
+@app.route('/get_stream')
+def get_stream():
     video_id = request.args.get('id')
     if not video_id:
         return jsonify({"status": "error"}), 400
 
-    invidious_instances = [
+    invidious_nodes = [
         f"https://yewtu.be/api/v1/videos/{video_id}",
-        f"https://invidious.nerdvpn.de/api/v1/videos/{video_id}"
+        f"https://invidious.nerdvpn.de/api/v1/videos/{video_id}",
+        f"https://inv.tux.pizza/api/v1/videos/{video_id}"
     ]
 
-    for instance_url in invidious_instances:
+    for node in invidious_nodes:
         try:
-            r = requests.get(instance_url, timeout=5)
+            r = requests.get(node, timeout=4)
             if r.status_code == 200:
                 data = r.json()
-                format_streams = data.get('formatStreams', [])
-                if format_streams:
-                    selected_stream = format_streams[-1].get('url')
-                    return jsonify({"status": "success", "stream_url": selected_stream})
+                streams = data.get('formatStreams', [])
+                if streams:
+                    # Select best resolution mp4
+                    selected_url = streams[-1].get('url')
+                    return jsonify({"status": "success", "stream_url": selected_url})
         except Exception:
             continue
 
-    return jsonify({"status": "error", "message": "Stream extraction failed"})
+    return jsonify({"status": "fallback", "fallback_url": f"https://m.youtube.com/watch?v={video_id}"})
 
+# Admin Routes
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
@@ -99,7 +103,6 @@ def admin():
             return redirect(url_for('admin_dashboard'))
         else:
             return render_template('admin_login.html', error="Invalid credentials")
-    
     if session.get('logged_in'):
         return redirect(url_for('admin_dashboard'))
     return render_template('admin_login.html')
@@ -108,22 +111,16 @@ def admin():
 def admin_dashboard():
     if not session.get('logged_in'):
         return redirect(url_for('admin'))
-    settings = load_settings()
-    return render_template('admin_dashboard.html', settings=settings)
+    return render_template('admin_dashboard.html', settings=load_settings())
 
 @app.route('/admin/update_settings', methods=['POST'])
 def update_settings():
     if not session.get('logged_in'):
-        return jsonify({"status": "error", "message": "Unauthorized"}), 401
-    
-    head_script = request.form.get('adsterra_head_script', '')
-    banner_script = request.form.get('adsterra_banner_script', '')
-    title = request.form.get('custom_header_title', '')
-
+        return jsonify({"status": "error"}), 401
     new_settings = {
-        "adsterra_head_script": head_script,
-        "adsterra_banner_script": banner_script,
-        "custom_header_title": title
+        "adsterra_head_script": request.form.get('adsterra_head_script', ''),
+        "adsterra_banner_script": request.form.get('adsterra_banner_script', ''),
+        "custom_header_title": request.form.get('custom_header_title', '')
     }
     save_settings(new_settings)
     return redirect(url_for('admin_dashboard'))
@@ -135,4 +132,3 @@ def admin_logout():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-        
