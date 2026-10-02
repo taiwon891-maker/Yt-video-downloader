@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ settings.custom_header_title if settings else 'YouTube Player & Downloader' }}</title>
+    <title>{{ settings.custom_header_title if settings else 'YouTube Player' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,7 +13,6 @@
         .tag-btn.active { background-color: #0f0f0f; color: #ffffff; }
     </style>
 
-    <!-- Adsterra Dynamic Head Script -->
     {{ settings.adsterra_head_script | safe if settings else '' }}
 </head>
 <body class="bg-white text-gray-900 pb-20">
@@ -33,7 +32,7 @@
     </div>
 </header>
 
-<!-- Category Tabs -->
+<!-- Categories -->
 <nav class="flex space-x-2 px-3 py-2 overflow-x-auto scrollbar-hide border-b border-gray-100 sticky top-14 bg-white z-40">
     <button onclick="filterCategory('All', this)" class="tag-btn active bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">All</button>
     <button onclick="filterCategory('Drama', this)" class="tag-btn bg-gray-100 px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap">Drama</button>
@@ -44,36 +43,44 @@
 <!-- Main Container -->
 <main class="max-w-4xl mx-auto p-2">
 
-    <!-- Home Section -->
     <section id="home-sec">
         <div id="video-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
-    <!-- Playing Section -->
     <section id="playing-sec" class="hidden">
         <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-md">
-            <div class="aspect-video w-full bg-black relative">
-                <!-- YouTube JS API Target Container -->
+            <div class="aspect-video w-full bg-black relative flex items-center justify-center">
+                <!-- Standard YouTube API Container -->
                 <div id="player" class="w-full h-full"></div>
+
+                <!-- Native Video Player (Auto Bypass Mode) -->
+                <video id="nativePlayer" class="w-full h-full hidden" controls autoplay></video>
+
+                <!-- Loading Spinner -->
+                <div id="streamLoader" class="absolute hidden flex flex-col items-center text-white text-xs gap-2">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-red-600"></i>
+                    <span>Bypassing Restriction & Loading Video...</span>
+                </div>
             </div>
+
             <div class="p-3 bg-white border-b">
                 <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
                 <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
 
-                <!-- Restriction Notice & Fallback -->
-                <div class="mt-2 bg-red-50 p-2 rounded border border-red-200 flex items-center justify-between">
-                    <span class="text-[11px] text-red-800 font-medium"><i class="fa-solid fa-play me-1"></i> প্লেব্যাকে সমস্যা হলে সরাসরি খুলুন:</span>
-                    <a id="ytDirectWatch" href="#" target="_blank" class="bg-red-600 text-white text-xs px-2.5 py-1 rounded font-bold flex items-center gap-1 shrink-0">
-                        <i class="fa-brands fa-youtube"></i> Open Video
-                    </a>
+                <!-- Restriction Bypass Button -->
+                <div class="mt-2 bg-amber-50 p-2 rounded border border-amber-200 flex items-center justify-between">
+                    <span class="text-[11px] text-amber-800 font-medium"><i class="fa-solid fa-triangle-exclamation me-1"></i> ভিডিও প্লে না হলে ক্লিক করুন:</span>
+                    <button onclick="switchProxyStream()" class="bg-amber-600 text-white text-xs px-2.5 py-1 rounded font-bold shrink-0">
+                        Play Stream
+                    </button>
                 </div>
 
-                <!-- Adsterra Banner Ad Injection Area -->
+                <!-- Adsterra Banner Ad Injection -->
                 <div class="mt-3 flex justify-center overflow-hidden">
                     {{ settings.adsterra_banner_script | safe if settings else '' }}
                 </div>
 
-                <!-- Download Buttons -->
+                <!-- Downloads -->
                 <div class="flex gap-2 mt-3" id="dl-buttons">
                     <button onclick="downloadClient('1080')" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 1080p</button>
                     <button onclick="downloadClient('720')" class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium"><i class="fa-solid fa-download me-1"></i> 720p</button>
@@ -82,21 +89,18 @@
             </div>
         </div>
 
-        <!-- Related Videos -->
         <div class="mt-4">
             <h2 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider px-1">Up Next / Suggested Videos</h2>
             <div id="related-feed" class="space-y-3"></div>
         </div>
     </section>
 
-    <!-- Loader -->
     <div id="loader" class="text-center py-6 hidden">
         <i class="fa-solid fa-spinner fa-spin text-xl text-red-600"></i>
     </div>
 
 </main>
 
-<!-- Bottom Navigation -->
 <footer class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50">
     <button onclick="showSection('home')" id="nav-home" class="flex flex-col items-center text-red-600">
         <i class="fa-solid fa-house text-lg"></i>
@@ -108,7 +112,6 @@
     </button>
 </footer>
 
-<!-- Load YouTube IFrame Player API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -119,7 +122,6 @@
     let activeTab = "home";
     let ytPlayer = null;
 
-    // YouTube HTML5 Player API Callback
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('player', {
             height: '100%',
@@ -137,8 +139,40 @@
         });
     }
 
+    // ইউটিউব এম্বেড ব্লক এরর দিলে অটোমেটিক প্রক্সি প্লেয়ারে সুইচের ফাংশন
     function onPlayerError(event) {
-        console.warn("Player Error Code:", event.data);
+        if (event.data === 101 || event.data === 150 || event.data === 2) {
+            switchProxyStream();
+        }
+    }
+
+    async function switchProxyStream() {
+        if (!currentVideoId) return;
+
+        const ytContainer = document.getElementById('player');
+        const nativeVideo = document.getElementById('nativePlayer');
+        const loader = document.getElementById('streamLoader');
+
+        ytContainer.classList.add('hidden');
+        loader.classList.remove('hidden');
+
+        try {
+            const res = await fetch(`/get_proxy_stream?id=${currentVideoId}`);
+            const data = await res.json();
+
+            loader.classList.add('hidden');
+
+            if (data.status === 'success' && data.stream_url) {
+                nativeVideo.src = data.stream_url;
+                nativeVideo.classList.remove('hidden');
+                nativeVideo.play();
+            } else {
+                alert("ভিডিও প্লে করা সম্ভব হয়নি। ডাউনলোড বাটনে ক্লিক করে সেভ করুন।");
+            }
+        } catch (e) {
+            loader.classList.add('hidden');
+            alert("Error bypassing video restriction.");
+        }
     }
 
     async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
@@ -156,7 +190,6 @@
             if (data.videos && data.videos.length > 0) {
                 data.videos.forEach(v => {
                     const cleanTitle = v.title.replace(/'/g, "");
-                    
                     if (targetFeedId === 'related-feed') {
                         feed.innerHTML += `
                             <div class="flex gap-2 cursor-pointer bg-gray-50 p-2 rounded-lg" onclick="playThis('${v.videoId}', '${cleanTitle}', '${v.channel}')">
@@ -200,9 +233,14 @@
 
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
-        document.getElementById('ytDirectWatch').href = `https://www.youtube.com/watch?v=${videoId}`;
+
+        const ytContainer = document.getElementById('player');
+        const nativeVideo = document.getElementById('nativePlayer');
         
-        // HTML5 Player API-এর মাধ্যমে ভিডিও লোড
+        nativeVideo.pause();
+        nativeVideo.classList.add('hidden');
+        ytContainer.classList.remove('hidden');
+
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             ytPlayer.loadVideoById(videoId);
         }
@@ -265,9 +303,8 @@
     }
 
     function resetFeed() {
-        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-            ytPlayer.stopVideo();
-        }
+        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
+        document.getElementById('nativePlayer').pause();
         currentQuery = "Bangla new songs";
         nextPageToken = "";
         showSection('home');
