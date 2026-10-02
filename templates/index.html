@@ -49,29 +49,20 @@
 
     <section id="playing-sec" class="hidden">
         <div class="sticky top-14 bg-black z-30 rounded-xl overflow-hidden shadow-md">
-            <div class="aspect-video w-full bg-black relative flex items-center justify-center">
-                <!-- Standard YouTube API Container -->
-                <div id="player" class="w-full h-full"></div>
-
-                <!-- Native Video Player (Auto Bypass Mode) -->
-                <video id="nativePlayer" class="w-full h-full hidden" controls autoplay></video>
-
-                <!-- Loading Spinner -->
-                <div id="streamLoader" class="absolute hidden flex flex-col items-center text-white text-xs gap-2">
-                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-red-600"></i>
-                    <span>Bypassing Restriction & Loading Video...</span>
-                </div>
+            <div class="aspect-video w-full bg-black relative">
+                <!-- Smart Web Frame Player -->
+                <iframe id="mainPlayerFrame" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
 
             <div class="p-3 bg-white border-b">
                 <h1 id="playTitle" class="text-sm font-bold line-clamp-2">Loading...</h1>
                 <p id="playChannel" class="text-xs text-gray-500 mt-1"></p>
 
-                <!-- Restriction Bypass Button -->
+                <!-- Mode Switcher -->
                 <div class="mt-2 bg-amber-50 p-2 rounded border border-amber-200 flex items-center justify-between">
-                    <span class="text-[11px] text-amber-800 font-medium"><i class="fa-solid fa-triangle-exclamation me-1"></i> ভিডিও প্লে না হলে ক্লিক করুন:</span>
-                    <button onclick="switchProxyStream()" class="bg-amber-600 text-white text-xs px-2.5 py-1 rounded font-bold shrink-0">
-                        Play Stream
+                    <span class="text-[11px] text-amber-800 font-medium"><i class="fa-solid fa-circle-play me-1"></i> ভিডিও প্লে না হলে প্লেয়ার চেঞ্জ করুন:</span>
+                    <button onclick="toggleFallbackPlayer()" class="bg-amber-600 text-white text-xs px-2.5 py-1 rounded font-bold shrink-0">
+                        Switch Player
                     </button>
                 </div>
 
@@ -112,68 +103,13 @@
     </button>
 </footer>
 
-<script src="https://www.youtube.com/iframe_api"></script>
-
 <script>
     let nextPageToken = "";
     let currentQuery = "Bangla new songs";
     let currentVideoId = "";
     let isLoading = false;
     let activeTab = "home";
-    let ytPlayer = null;
-
-    function onYouTubeIframeAPIReady() {
-        ytPlayer = new YT.Player('player', {
-            height: '100%',
-            width: '100%',
-            playerVars: {
-                'playsinline': 1,
-                'autoplay': 1,
-                'rel': 0,
-                'modestbranding': 1,
-                'origin': window.location.origin
-            },
-            events: {
-                'onError': onPlayerError
-            }
-        });
-    }
-
-    // ইউটিউব এম্বেড ব্লক এরর দিলে অটোমেটিক প্রক্সি প্লেয়ারে সুইচের ফাংশন
-    function onPlayerError(event) {
-        if (event.data === 101 || event.data === 150 || event.data === 2) {
-            switchProxyStream();
-        }
-    }
-
-    async function switchProxyStream() {
-        if (!currentVideoId) return;
-
-        const ytContainer = document.getElementById('player');
-        const nativeVideo = document.getElementById('nativePlayer');
-        const loader = document.getElementById('streamLoader');
-
-        ytContainer.classList.add('hidden');
-        loader.classList.remove('hidden');
-
-        try {
-            const res = await fetch(`/get_proxy_stream?id=${currentVideoId}`);
-            const data = await res.json();
-
-            loader.classList.add('hidden');
-
-            if (data.status === 'success' && data.stream_url) {
-                nativeVideo.src = data.stream_url;
-                nativeVideo.classList.remove('hidden');
-                nativeVideo.play();
-            } else {
-                alert("ভিডিও প্লে করা সম্ভব হয়নি। ডাউনলোড বাটনে ক্লিক করে সেভ করুন।");
-            }
-        } catch (e) {
-            loader.classList.add('hidden');
-            alert("Error bypassing video restriction.");
-        }
-    }
+    let isWebPlayerMode = false;
 
     async function loadVideos(q, append = false, targetFeedId = 'video-feed') {
         if (isLoading) return;
@@ -229,26 +165,34 @@
 
     function playThis(videoId, title, channel) {
         currentVideoId = videoId;
+        isWebPlayerMode = false;
         showSection('playing');
 
         document.getElementById('playTitle').innerText = title;
         document.getElementById('playChannel').innerText = channel || 'YouTube Channel';
 
-        const ytContainer = document.getElementById('player');
-        const nativeVideo = document.getElementById('nativePlayer');
-        
-        nativeVideo.pause();
-        nativeVideo.classList.add('hidden');
-        ytContainer.classList.remove('hidden');
-
-        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById(videoId);
-        }
+        // স্ট্যান্ডার্ড এম্বেড প্লেয়ার লোড
+        const iframe = document.getElementById('mainPlayerFrame');
+        iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0`;
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         nextPageToken = "";
         loadVideos(title, false, 'related-feed');
+    }
+
+    // রেস্ট্রিক্টেড ভিডিও প্লে করার জন্য YouTube Web Player এ সুইচ
+    function toggleFallbackPlayer() {
+        if (!currentVideoId) return;
+        const iframe = document.getElementById('mainPlayerFrame');
+        
+        if (!isWebPlayerMode) {
+            iframe.src = `https://m.youtube.com/watch?v=${currentVideoId}`;
+            isWebPlayerMode = true;
+        } else {
+            iframe.src = `https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&playsinline=1&rel=0`;
+            isWebPlayerMode = false;
+        }
     }
 
     function showSection(name) {
@@ -303,8 +247,7 @@
     }
 
     function resetFeed() {
-        if (ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
-        document.getElementById('nativePlayer').pause();
+        document.getElementById('mainPlayerFrame').src = "";
         currentQuery = "Bangla new songs";
         nextPageToken = "";
         showSection('home');
